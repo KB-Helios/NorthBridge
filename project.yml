@@ -1,0 +1,112 @@
+name: Bolagscenter
+options:
+  bundleIdPrefix: com.kbhelios.northbridge
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "27.0"
+  groupSortPosition: top
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    CLANG_ENABLE_MODULES: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEVELOPMENT_TEAM: ""
+configs:
+  Debug: debug
+  Staging: release
+  Release: release
+configFiles:
+  Debug: Configurations/Debug.xcconfig
+  Staging: Configurations/Staging.xcconfig
+  Release: Configurations/Release.xcconfig
+targets:
+  Bolagscenter:
+    type: application
+    platform: iOS
+    sources:
+      - path: Bolagscenter
+        excludes:
+          - Resources
+      - path: Shared
+    resources:
+      - path: Bolagscenter/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kbhelios.northbridge
+        PRODUCT_NAME: NorthBridge
+        PRODUCT_MODULE_NAME: Bolagscenter
+        INFOPLIST_FILE: Bolagscenter/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Bolagscenter/Resources/Bolagscenter.entitlements
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SUPPORTS_MACCATALYST: NO
+        TARGETED_DEVICE_FAMILY: "1,2"
+    dependencies:
+      - target: BolagscenterWidget
+        embed: true
+  BolagscenterWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BolagscenterWidget
+        excludes:
+          - PrivacyInfo.xcprivacy
+      - path: Shared
+    resources:
+      - path: BolagscenterWidget/PrivacyInfo.xcprivacy
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kbhelios.northbridge.widget
+        PRODUCT_NAME: NorthBridgeWidget
+        PRODUCT_MODULE_NAME: BolagscenterWidget
+        INFOPLIST_FILE: BolagscenterWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BolagscenterWidget/BolagscenterWidget.entitlements
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 0.1.0
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+  BolagscenterTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/BolagscenterTests
+    dependencies:
+      - target: Bolagscenter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kbhelios.northbridge.tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/NorthBridge.app/NorthBridge"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+  BolagscenterUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Tests/BolagscenterUITests
+    dependencies:
+      - target: Bolagscenter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.kbhelios.northbridge.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Bolagscenter:
+    build:
+      targets:
+        Bolagscenter: all
+        BolagscenterWidget: all
+        BolagscenterTests: [test]
+        BolagscenterUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - BolagscenterTests
+        - BolagscenterUITests
+    archive:
+      config: Release
