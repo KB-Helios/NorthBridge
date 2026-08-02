@@ -42,6 +42,12 @@ struct OnboardingFlowView: View {
     @State private var usesLiquidSwipe = false
     @State private var validationFeedbackTrigger = 0
     @State private var chapterFeedbackTrigger = 0
+    @FocusState private var focusedCompanyField: CompanyField?
+
+    private enum CompanyField: Hashable {
+        case organisationNumber
+        case registeredName
+    }
 
     private enum Chapter: Int, CaseIterable, Identifiable {
         case identity
@@ -397,9 +403,19 @@ struct OnboardingFlowView: View {
                 TextField("Organisationsnummer", text: $organisationNumber)
                     .keyboardType(.numberPad)
                     .textContentType(.none)
+                    .focused(
+                        $focusedCompanyField,
+                        equals: .organisationNumber
+                    )
                     .accessibilityIdentifier("onboarding.organisationNumber")
                 TextField("Registrerat namn", text: $registeredName)
                     .textContentType(.organizationName)
+                    .focused(
+                        $focusedCompanyField,
+                        equals: .registeredName
+                    )
+                    .submitLabel(.done)
+                    .onSubmit { focusedCompanyField = nil }
                     .accessibilityIdentifier("onboarding.companyName")
             } header: {
                 Text("Lägg till bolag")
@@ -416,11 +432,13 @@ struct OnboardingFlowView: View {
                 enabled: companyIsValid,
                 identifier: "onboarding.company.continue"
             ) {
+                focusedCompanyField = nil
                 didConfirmCompanyDetails = false
                 advance(to: .verification)
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var verificationForm: some View {

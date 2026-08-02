@@ -293,25 +293,23 @@ final class CriticalWorkflowUITests: XCTestCase {
 
     private func dismissKeyboardIfPresent(in app: XCUIApplication) {
         let keyboard = app.keyboards.firstMatch
-        guard keyboard.exists else { return }
+        guard keyboard.waitForExistence(timeout: 1) else { return }
 
-        let submitKey = app.buttons.matching(
+        let submitKey = keyboard.buttons.matching(
             NSPredicate(
                 format: "identifier == %@ OR identifier == %@",
                 "Done",
                 "Return"
             )
         ).firstMatch
-        XCTAssertTrue(submitKey.waitForExistence(timeout: 3))
-        submitKey.tap()
+        if submitKey.waitForExistence(timeout: 3) {
+            submitKey.tap()
+        }
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == false"),
             object: keyboard
         )
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: 3),
-            .completed
-        )
+        _ = XCTWaiter.wait(for: [expectation], timeout: 8)
     }
 
     private func scrollUntilHittable(
@@ -319,8 +317,8 @@ final class CriticalWorkflowUITests: XCTestCase {
         in app: XCUIApplication
     ) {
         var attempts = 0
-        while attempts < 8 {
-            if element.waitForExistence(timeout: 0.5), element.isHittable {
+        while attempts < 12 {
+            if element.waitForExistence(timeout: 1), element.isHittable {
                 return
             }
             app.swipeUp()

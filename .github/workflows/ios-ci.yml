@@ -65,6 +65,7 @@ jobs:
             -destination "$DESTINATION" \
             -resultBundlePath "$RESULT_BUNDLE" \
             -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
             -skipPackagePluginValidation \
             CODE_SIGNING_ALLOWED=NO \
             test | tee artifacts/tests.log

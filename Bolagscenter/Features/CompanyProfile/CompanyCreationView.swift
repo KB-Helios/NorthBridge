@@ -119,6 +119,7 @@ struct CompanyCreationView: View {
         }
         .navigationTitle("Nytt bolag")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var accountID: UUID? {
