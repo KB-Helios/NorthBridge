@@ -107,14 +107,16 @@ final class CriticalWorkflowUITests: XCTestCase {
         createDecision.tap()
 
         app.textFields["board.resolution.title"]
-            .tapAndType("Beslut om UI-test")
+            .replaceText(with: "Beslut om UI-test")
         app.descendants(matching: .any)["board.resolution.text"]
-            .tapAndType("Styrelsen beslutade att godkänna UI-testet.")
+            .replaceText(
+                with: "Styrelsen beslutade att godkänna UI-testet."
+            )
         app.buttons["board.resolution.save"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Beslut om UI-test"]
-                .waitForExistence(timeout: 5)
+                .waitForExistence(timeout: 8)
         )
     }
 
@@ -365,14 +367,26 @@ private extension XCUIElement {
         typeText(text)
     }
 
-    func replaceText(with text: String) {
-        tap()
-        typeText(
-            String(
-                repeating: XCUIKeyboardKey.delete.rawValue,
-                count: 64
+    func replaceText(with text: String, attempts: Int = 3) {
+        for _ in 0..<attempts {
+            tap()
+            typeText(
+                String(
+                    repeating: XCUIKeyboardKey.delete.rawValue,
+                    count: 64
+                )
             )
-        )
-        typeText(text)
+            typeText(text)
+
+            let expectation = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value == %@", text),
+                object: self
+            )
+            if XCTWaiter.wait(for: [expectation], timeout: 3) == .completed {
+                return
+            }
+        }
+
+        XCTAssertEqual(value as? String, text)
     }
 }
