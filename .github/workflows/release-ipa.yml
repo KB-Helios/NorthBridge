@@ -84,7 +84,7 @@ jobs:
           NOTE
 
       - name: Upload immutable workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: northbridge-${{ env.RELEASE_TAG }}-unsigned-ipa
           if-no-files-found: error
