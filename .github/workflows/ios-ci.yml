@@ -71,7 +71,7 @@ jobs:
             test | tee artifacts/tests.log
 
       - name: Export simulator screenshots
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
           if [ -d "$RESULT_BUNDLE" ]; then
             mkdir -p artifacts/screenshots
@@ -84,7 +84,7 @@ jobs:
         run: git diff --exit-code -- project.yml Bolagscenter.xcodeproj
 
       - name: Upload generated project and test evidence
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: northbridge-ios27-ci-${{ github.run_id }}
