@@ -17,7 +17,7 @@ final class CriticalWorkflowUITests: XCTestCase {
         ]
 
         for (identifier, title) in destinations {
-            let tab = app.descendants(matching: .any)[identifier]
+            let tab = rootTab(in: app, identifier: identifier, title: title)
             XCTAssertTrue(
                 tab.waitForExistence(timeout: 5),
                 "Tabben \(identifier) saknas"
@@ -29,7 +29,6 @@ final class CriticalWorkflowUITests: XCTestCase {
             )
         }
 
-        app.descendants(matching: .any)["tab.overview"].tap()
         let settingsButton = app.buttons["settings.open"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
         settingsButton.tap()
@@ -41,7 +40,7 @@ final class CriticalWorkflowUITests: XCTestCase {
 
     func testAddsAndSelectsACompany() {
         let app = launchSeeded()
-        let switcher = app.buttons["company.switcher"]
+        let switcher = companySwitcher(in: app)
         XCTAssertTrue(switcher.waitForExistence(timeout: 5))
 
         switcher.tap()
@@ -53,24 +52,24 @@ final class CriticalWorkflowUITests: XCTestCase {
             .tapAndType("Östra UI Test AB")
         dismissKeyboardIfPresent(in: app)
         let confirmation = app.switches["company.add.confirm"]
-        XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
+        scrollUntilHittable(confirmation, in: app)
         tapTrailingControl(confirmation)
         let saveButton = app.buttons["company.add.save"]
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 3))
+        scrollUntilHittable(saveButton, in: app)
         XCTAssertTrue(waitUntilEnabled(saveButton))
         saveButton.tap()
 
         XCTAssertTrue(
             waitForValue(
                 "Östra UI Test AB",
-                on: app.buttons["company.switcher"]
+                on: companySwitcher(in: app)
             )
         )
     }
 
     func testSwitchesBetweenAuthorizedCompanies() {
         let app = launchSeeded()
-        let switcher = app.buttons["company.switcher"]
+        let switcher = companySwitcher(in: app)
         XCTAssertTrue(switcher.waitForExistence(timeout: 5))
 
         switcher.tap()
@@ -230,7 +229,7 @@ final class CriticalWorkflowUITests: XCTestCase {
         let app = launchSeeded(
             extraArguments: [
                 "-UIPreferredContentSizeCategoryName",
-                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
+                "UICTContentSizeCategoryAccessibilityXXXL"
             ]
         )
         XCTAssertTrue(
@@ -319,13 +318,35 @@ final class CriticalWorkflowUITests: XCTestCase {
         _ element: XCUIElement,
         in app: XCUIApplication
     ) {
-        XCTAssertTrue(element.waitForExistence(timeout: 5))
         var attempts = 0
-        while !element.isHittable && attempts < 6 {
+        while attempts < 8 {
+            if element.waitForExistence(timeout: 0.5), element.isHittable {
+                return
+            }
             app.swipeUp()
             attempts += 1
         }
-        XCTAssertTrue(element.isHittable)
+        XCTAssertTrue(element.exists && element.isHittable)
+    }
+
+    private func companySwitcher(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(identifier: "company.switcher")
+            .firstMatch
+    }
+
+    private func rootTab(
+        in app: XCUIApplication,
+        identifier: String,
+        title: String
+    ) -> XCUIElement {
+        let identified = app.descendants(matching: .any)
+            .matching(identifier: identifier)
+            .firstMatch
+        if identified.waitForExistence(timeout: 1) {
+            return identified
+        }
+        return app.buttons[title]
     }
 
     private func attachScreenshot(

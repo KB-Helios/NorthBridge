@@ -246,6 +246,7 @@ private struct TabRootView: View {
                             companies: companies,
                             selectedCompanyID: selectedCompanyID,
                             canAddCompany: canAddCompany,
+                            prefersCompactLabel: tab == .search,
                             onSelect: onSelectCompany,
                             onAddCompany: onAddCompany
                         )

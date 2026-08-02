@@ -40,8 +40,8 @@ struct RootView: View {
                         environment.sessionController
                             .installUITestExpiredState()
                     } else {
-                        try await environment.sessionController
-                            .createLocalSession(
+                        environment.sessionController
+                            .installUITestActiveState(
                                 accountID: UITestLaunchConfiguration.accountID
                             )
                         environment.selectedCompanyID =

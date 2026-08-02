@@ -127,7 +127,7 @@ authenticated account with an APNs installation only after notification consent:
   "apns_environment": "sandbox",
   "authorization": "authorized",
   "shows_sensitive_details": false,
-  "app_version": "0.1.0",
+  "app_version": "0.2.0",
   "locale": "sv-SE"
 }
 ```

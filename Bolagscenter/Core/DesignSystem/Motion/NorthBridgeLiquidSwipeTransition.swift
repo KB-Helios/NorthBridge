@@ -1,6 +1,6 @@
 import SwiftUI
 
-private struct NorthBridgeLiquidSwipeRevealModifier: AnimatableModifier {
+private struct NorthBridgeLiquidSwipeRevealModifier: @MainActor AnimatableModifier {
     var progress: CGFloat
     let edge: HorizontalEdge
 
@@ -17,6 +17,7 @@ private struct NorthBridgeLiquidSwipeRevealModifier: AnimatableModifier {
 }
 
 extension AnyTransition {
+    @MainActor
     static func northBridgeLiquidSwipe(from edge: HorizontalEdge) -> AnyTransition {
         .asymmetric(
             insertion: .modifier(

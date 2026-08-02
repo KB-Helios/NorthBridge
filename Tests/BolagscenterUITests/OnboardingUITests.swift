@@ -34,7 +34,7 @@ final class OnboardingUITests: XCTestCase {
         app.buttons["onboarding.company.continue"].tap()
 
         let confirmation = app.switches["onboarding.company.confirm"]
-        XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
+        XCTAssertTrue(scrollUntilHittable(confirmation, in: app))
         tapTrailingControl(confirmation)
 
         let verificationContinue = app.buttons["onboarding.verification.continue"]
@@ -103,6 +103,21 @@ final class OnboardingUITests: XCTestCase {
         element.coordinate(
             withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)
         ).tap()
+    }
+
+    @MainActor
+    private func scrollUntilHittable(
+        _ element: XCUIElement,
+        in app: XCUIApplication,
+        attempts: Int = 8
+    ) -> Bool {
+        for _ in 0..<attempts {
+            if element.waitForExistence(timeout: 0.5), element.isHittable {
+                return true
+            }
+            app.swipeUp()
+        }
+        return element.exists && element.isHittable
     }
 
     @MainActor

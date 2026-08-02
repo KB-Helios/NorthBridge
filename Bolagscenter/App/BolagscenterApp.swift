@@ -15,6 +15,13 @@ struct BolagscenterApp: App {
         let isUITesting = UITestLaunchConfiguration.usesInMemoryStore
         if isUITesting {
             environment.lockController.disable()
+            environment.presentationPreferences.appearance =
+                UITestLaunchConfiguration.requestedAppearance ?? .light
+            environment.presentationPreferences.enhancedMotion = false
+            environment.presentationPreferences.hapticsEnabled = false
+            environment.presentationPreferences.dashboardDensity = .comfortable
+            environment.presentationPreferences.financialPrivacyBlur = false
+            environment.presentationPreferences.documentPresentation = .list
         }
         #else
         let isUITesting = false

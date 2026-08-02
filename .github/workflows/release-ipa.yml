@@ -99,13 +99,23 @@ jobs:
         run: |
           VERSION="${RELEASE_TAG#v}"
           TITLE="NorthBridge ${VERSION} - Liquid Glass Command Center"
+          NOTES_FILE="docs/RELEASE_NOTES_${VERSION}.md"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release upload "$RELEASE_TAG" release/* --clobber
+          elif [ -f "$NOTES_FILE" ]; then
+            gh release create "$RELEASE_TAG" \
+              release/* \
+              --verify-tag \
+              --prerelease \
+              --latest=false \
+              --notes-file "$NOTES_FILE" \
+              --title "$TITLE"
           else
             gh release create "$RELEASE_TAG" \
               release/* \
               --verify-tag \
               --prerelease \
+              --latest=false \
               --generate-notes \
               --title "$TITLE"
           fi

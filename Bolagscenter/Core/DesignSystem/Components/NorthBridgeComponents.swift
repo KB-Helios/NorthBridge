@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 
 enum NorthBridgeStatusKind: Sendable {
     case neutral
@@ -777,9 +778,12 @@ struct NorthBridgeCompanyContext: Identifiable, Equatable, Sendable {
 }
 
 struct CompanyContextMenu: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     let companies: [NorthBridgeCompanyContext]
     let selectedCompanyID: UUID?
     let canAddCompany: Bool
+    let prefersCompactLabel: Bool
     let onSelect: (UUID) -> Void
     let onAddCompany: () -> Void
 
@@ -817,12 +821,13 @@ struct CompanyContextMenu: View {
             HStack(spacing: NorthBridgeSpacing.xs) {
                 Image(systemName: "building.2.fill")
                     .foregroundStyle(Color.northBridgeBlue)
-                Text(selectedCompany?.name ?? String(localized: "Välj bolag"))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.northBridgeTextTertiary)
+                if !usesCompactToolbarLabel {
+                    Text(selectedCompany?.name ?? String(localized: "Välj bolag"))
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Color.northBridgeTextTertiary)
+                }
             }
             .font(.subheadline.weight(.semibold))
             .frame(minHeight: NorthBridgeMetrics.minimumTarget)
@@ -832,6 +837,13 @@ struct CompanyContextMenu: View {
         .accessibilityLabel("Aktivt bolag")
         .accessibilityValue(selectedCompany?.name ?? String(localized: "Inget bolag valt"))
         .accessibilityHint("Öppnar menyn för att byta bolag")
+    }
+
+    private var usesCompactToolbarLabel: Bool {
+        prefersCompactLabel
+            || dynamicTypeSize.isAccessibilitySize
+            || UIApplication.shared.preferredContentSizeCategory
+                .isAccessibilityCategory
     }
 }
 

@@ -102,8 +102,8 @@ struct NorthBridgeBrandLockup: View {
     var body: some View {
         Image("NorthBridgeWordmark")
             .resizable()
-            .scaledToFit()
-            .frame(maxWidth: maxWidth)
+            .aspectRatio(contentMode: .fit)
+            .frame(width: maxWidth, height: maxWidth * 338 / 1_575)
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: NorthBridgeRadius.hero,

@@ -171,7 +171,7 @@ struct GlobalSearchView: View {
                     .accessibilityIdentifier("search.shareCompanyOverview")
                 }
 
-                quickAction("Fråga Bolagsassistenten", systemImage: "sparkles") {
+                quickAction("Fråga assistenten", systemImage: "sparkles") {
                     environment.navigate(to: .assistant, in: .overview)
                 }
             }
@@ -677,9 +677,12 @@ private struct SearchQuickActionLabel: View {
             )
 
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Color.northBridgeTextPrimary)
                 .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .allowsTightening(true)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)

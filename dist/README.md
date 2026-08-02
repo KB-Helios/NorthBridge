@@ -1,8 +1,13 @@
-# NorthBridge release artifacts
+# NorthBridge v0.1.0 validation artifacts
 
-These artifacts were built on macOS 27 with Xcode 27 beta 4 and Swift 6.4.
-The final app passed 84 of 84 tests on iPhone 17 Pro with iOS 27.0 and another
-84 of 84 tests on iPhone 17 Pro with iOS 26.5.
+These checked-in artifacts are the historical v0.1.0 validation baseline. They
+were built on macOS 27 with Xcode 27 beta 4 and Swift 6.4 and passed 84 of 84
+tests on iPhone 17 Pro with iOS 27.0 and another 84 of 84 tests on iPhone 17 Pro
+with iOS 26.5.
+
+They do not contain the v0.2 design refresh. Current tagged releases are built
+from the tag by GitHub Actions and published as GitHub pre-release assets with
+their own checksum manifest and installation note.
 
 ## Files
 

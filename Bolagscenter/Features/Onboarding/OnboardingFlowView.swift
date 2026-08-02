@@ -100,15 +100,27 @@ struct OnboardingFlowView: View {
         }
     }
 
+    init() {
+        #if DEBUG
+        if UITestLaunchConfiguration.capturesOnboardingLiquidSwipeFrame {
+            _step = State(initialValue: .role)
+            _displayName = State(initialValue: "Visuell Test")
+            _email = State(initialValue: "visual@example.se")
+            _organisationNumber = State(initialValue: "5560160680")
+            _registeredName = State(initialValue: "Visuellt Testbolag AB")
+            _didConfirmCompanyDetails = State(initialValue: true)
+            _usesLiquidSwipe = State(initialValue: true)
+        }
+        #endif
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 onboardingProgress
 
                 ZStack {
-                    stepContent
-                        .id(step)
-                        .transition(stepTransition)
+                    onboardingStepStage
                 }
                 .frame(maxWidth: 620, maxHeight: .infinity)
                 .frame(maxWidth: .infinity)
@@ -133,6 +145,37 @@ struct OnboardingFlowView: View {
             guard current != nil, current != previous else { return }
             validationFeedbackTrigger += 1
         }
+    }
+
+    @ViewBuilder
+    private var onboardingStepStage: some View {
+        #if DEBUG
+        if UITestLaunchConfiguration.capturesOnboardingLiquidSwipeFrame {
+            ZStack {
+                verificationForm
+                    .opacity(0)
+                roleForm
+                    .mask {
+                        NorthBridgeLiquidSwipeShape(
+                            progress: 0.94,
+                            edge: .trailing
+                        )
+                    }
+            }
+            .background(Color.northBridgeNavy.opacity(0.055))
+            .accessibilityIdentifier("onboarding.liquidSwipe.frame")
+        } else {
+            transitioningStepContent
+        }
+        #else
+        transitioningStepContent
+        #endif
+    }
+
+    private var transitioningStepContent: some View {
+        stepContent
+            .id(step)
+            .transition(stepTransition)
     }
 
     private var onboardingProgress: some View {
@@ -993,16 +1036,27 @@ struct OnboardingFlowView: View {
             role: role
         )
 
-        modelContext.insert(account)
-        modelContext.insert(company)
-        modelContext.insert(membership)
-        insertOnboardingRecords(account: account, company: company)
-
         do {
-            try modelContext.save()
+            #if DEBUG
+            if UITestLaunchConfiguration.usesInMemoryStore {
+                environment.sessionController.installUITestActiveState(
+                    accountID: account.id
+                )
+            } else {
+                try await environment.sessionController.createLocalSession(
+                    accountID: account.id
+                )
+            }
+            #else
             try await environment.sessionController.createLocalSession(
                 accountID: account.id
             )
+            #endif
+            modelContext.insert(account)
+            modelContext.insert(company)
+            modelContext.insert(membership)
+            insertOnboardingRecords(account: account, company: company)
+            try modelContext.save()
             environment.selectedCompanyID = company.id
             if enableDeviceLock {
                 environment.lockController.enableAfterVerifiedSetup()
@@ -1011,6 +1065,9 @@ struct OnboardingFlowView: View {
             }
         } catch {
             modelContext.rollback()
+            if environment.sessionController.activeSession?.accountID == account.id {
+                await environment.sessionController.logout()
+            }
             SecureLogger.security.error(
                 "Onboarding failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )

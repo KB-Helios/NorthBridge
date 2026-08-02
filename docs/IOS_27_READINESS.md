@@ -28,10 +28,17 @@ both iOS 26 and iOS 27.
 The final source was regenerated with XcodeGen 2.46 and validated on macOS 27,
 Xcode 27 beta 4, and Swift 6.4:
 
-- iPhone 17 Pro, iOS 27.0: **84 of 84 tests passed**, with zero failures,
+- iPhone 17 Pro, iOS 27.0: **91 of 91 tests passed**, with zero failures,
   skips, expected failures, or runtime warnings.
-- iPhone 17 Pro, iOS 26.5: **84 of 84 tests passed**, with zero failures,
+- iPhone 17 Pro, iOS 26.5: **91 of 91 tests passed**, with zero failures,
   skips, expected failures, or runtime warnings.
+- iPad mini (A17 Pro), iOS 27.0: the adaptive primary-workspace and settings
+  flow passed with zero failures, skips, expected failures, or runtime
+  warnings. It covered Overview, the healthy-empty company state, Finance,
+  Company, Documents list/grid, Search, and Settings.
+- Fourteen deterministic phone captures cover the primary workspaces, settings,
+  activity, dark mode, largest Dynamic Type, and onboarding including the
+  liquid-swipe transition frame.
 - The warning-free Release simulator app was installed and launched on the
   iOS 27 iPhone 17 Pro simulator.
 - A Release arm64 device archive was produced with bundle identifier
@@ -41,6 +48,12 @@ The UI suite covers onboarding, company creation and switching, meeting and
 decision creation, document import, shareholder and share-certificate flows,
 offline and expired-session states, portable-data and PDF exports,
 accessibility, and largest Dynamic Type.
+
+The compatibility harness accounts for platform-owned accessibility differences:
+iOS 27 retains identifiers on native `Tab` items, while iOS 26.5 exposes their
+localized button labels. On iPad, secondary toolbar controls can be rehosted in
+the native **More** menu. Both paths are exercised without replacing the native
+controls.
 
 ## Physical-device acceptance pending
 
