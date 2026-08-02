@@ -44,11 +44,12 @@ The current release candidate passed 91 of 91 tests on both iOS 27.0 and iOS
 27.0. All three result summaries reported zero runtime warnings.
 
 Tags matching `v*` run `.github/workflows/release-ipa.yml`, which creates an
-unsigned arm64 device archive, packages `NorthBridge-unsigned.ipa`, publishes a
-SHA-256 manifest and installation note, and creates a GitHub pre-release. The
-IPA cannot be installed on a stock iPhone until an Apple Developer team signs
-it. The checked-in `dist` directory is the historical v0.1.0 validation
-baseline; see `dist/README.md` for its exact provenance.
+unsigned arm64 device archive, packages `NorthBridge-<tag>-unsigned.ipa`
+(for example, `NorthBridge-v0.2.0-unsigned.ipa`), publishes a SHA-256 manifest
+and installation note, and creates a GitHub pre-release. The IPA cannot be
+installed on a stock iPhone until an Apple Developer team signs it. The
+checked-in `dist` directory is the historical v0.1.0 validation baseline; see
+`dist/README.md` for its exact provenance.
 
 The verified source and downloadable preview artifacts are published in the
 [KB-Helios/NorthBridge](https://github.com/KB-Helios/NorthBridge) repository.
