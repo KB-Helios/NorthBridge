@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import UIKit
 
 enum NorthBridgeStatusKind: Sendable {
     case neutral
@@ -842,8 +841,6 @@ struct CompanyContextMenu: View {
     private var usesCompactToolbarLabel: Bool {
         prefersCompactLabel
             || dynamicTypeSize.isAccessibilitySize
-            || UIApplication.shared.preferredContentSizeCategory
-                .isAccessibilityCategory
     }
 }
 
