@@ -22,18 +22,20 @@ This file describes the current product boundary honestly. A limitation must not
 - Bolagsassistenten currently uses its grounded on-device deterministic engine
   and sends no company data externally. External AI remains intentionally
   disabled until provider selection and per-request consent are implemented.
-- The final source, Release build, and full simulator suites have been validated
-  with Xcode 27 on iOS 27.0 and iOS 26.5. A physical iOS 27 beta iPhone and a
-  paid Apple signing team remain required for device-only acceptance; see
-  `IOS_27_READINESS.md` and `dist/README.md`.
+- The final source and full 91-test simulator suite have been validated with
+  Xcode 27 on both iOS 27.0 and iOS 26.5. The adaptive primary-workspace flow
+  also passed on an iPad mini simulator running iOS 27.0. A physical iOS 27
+  beta iPhone and a paid Apple signing team remain required for device-only
+  acceptance; see `IOS_27_READINESS.md` and `dist/README.md`.
 - The protected offline mutation queue, reconnect replay, idempotency, and typed
   conflict states are implemented at the transport boundary. A configured
   backend is still required to accept replay and produce server-side conflict
   payloads.
 - Automated accessibility and largest-Dynamic-Type audits passed, but simulator
   evidence does not replace pending physical-device camera, dark-mode,
-  VoiceOver, StoreKit sandbox, APNs/background-delivery, and multi-layout
-  acceptance.
+  VoiceOver, StoreKit sandbox, APNs/background-delivery, and broad physical
+  device/rotation acceptance.
 - Source, checksums, and verified preview artifacts are published in the public
-  `KB-Helios/NorthBridge` repository. The unsigned IPA remains a development
-  handoff—not a substitute for Apple Developer signing or TestFlight.
+  `KB-Helios/NorthBridge` repository. Tagged builds publish an unsigned IPA as
+  a pre-release development handoff—not a substitute for Apple Developer
+  signing or TestFlight.

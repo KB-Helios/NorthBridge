@@ -99,6 +99,8 @@ struct UserRoleManagementView: View {
         }
         .navigationTitle("Användare och roller")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Inbjudan", systemImage: "person.badge.plus") {
@@ -246,6 +248,8 @@ private struct InvitationEditorView: View {
             }
             .navigationTitle("Nytt inbjudningsutkast")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -378,6 +382,8 @@ private struct MembershipEditorView: View {
             }
             .navigationTitle("Redigera roll")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }

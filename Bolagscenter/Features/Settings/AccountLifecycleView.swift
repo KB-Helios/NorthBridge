@@ -100,6 +100,8 @@ struct AccountLifecycleView: View {
         }
         .navigationTitle("Konto och data")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .confirmationDialog(
             "Vill du logga ut?",
             isPresented: $showsLogoutConfirmation,
@@ -226,6 +228,8 @@ private struct AccountDeletionConfirmationView: View {
             }
             .navigationTitle("Radera konto")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") {

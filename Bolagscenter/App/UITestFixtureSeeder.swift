@@ -23,6 +23,20 @@ enum UITestLaunchConfiguration {
         CommandLine.arguments.contains("-ui-testing-document-import")
     }
 
+    static var capturesOnboardingLiquidSwipeFrame: Bool {
+        CommandLine.arguments.contains("-ui-testing-liquid-swipe-frame")
+    }
+
+    static var requestedAppearance: NorthBridgeAppearance? {
+        if CommandLine.arguments.contains("-ui-testing-appearance-dark") {
+            return .dark
+        }
+        if CommandLine.arguments.contains("-ui-testing-appearance-light") {
+            return .light
+        }
+        return nil
+    }
+
     static var usesInMemoryStore: Bool {
         isReset || isSeeded
     }
@@ -79,10 +93,11 @@ enum UITestFixtureSeeder {
             id: UITestLaunchConfiguration.secondaryCompanyID,
             organisationNumber: "5590000856",
             registeredName: "Sydlig Test AB",
-            status: .unknown,
+            status: .active,
             sourceName: "Deterministisk UI-testfixture",
             sourceUpdatedAt: .now,
-            isStale: true
+            lastSynchronizedAt: .now,
+            isStale: false
         )
         context.insert(account)
         context.insert(primaryCompany)
@@ -131,6 +146,62 @@ enum UITestFixtureSeeder {
                 periodEnd: .now,
                 sourceName: "UI-testfixture",
                 valueState: .manuallyEntered
+            )
+        )
+        context.insert(
+            DocumentRecord(
+                id: UUID(
+                    uuidString: "99999999-9999-9999-9999-999999999981"
+                ) ?? UUID(),
+                companyID: primaryCompany.id,
+                title: "Årsredovisning 2025",
+                category: .annualReports,
+                originalFilename: "arsredovisning-2025.pdf",
+                uniformTypeIdentifier: "com.adobe.pdf",
+                extractedText: "Deterministiskt dokumentunderlag för visuell verifiering.",
+                tags: "årsredovisning,2025",
+                pageCount: 24,
+                importedAt: .now.addingTimeInterval(-3 * 86_400),
+                sourceName: "UI-testfixture",
+                isFavorite: true,
+                isAvailableOffline: false
+            )
+        )
+        context.insert(
+            DocumentRecord(
+                id: UUID(
+                    uuidString: "99999999-9999-9999-9999-999999999982"
+                ) ?? UUID(),
+                companyID: primaryCompany.id,
+                title: "Styrelseprotokoll 2026-01",
+                category: .boardMinutes,
+                originalFilename: "styrelseprotokoll-2026-01.pdf",
+                uniformTypeIdentifier: "com.adobe.pdf",
+                extractedText: "Protokoll från UI-testmötet.",
+                tags: "styrelse,protokoll",
+                pageCount: 6,
+                importedAt: .now.addingTimeInterval(-86_400),
+                sourceName: "UI-testfixture",
+                isAvailableOffline: true
+            )
+        )
+        context.insert(
+            DocumentRecord(
+                id: UUID(
+                    uuidString: "99999999-9999-9999-9999-999999999983"
+                ) ?? UUID(),
+                companyID: primaryCompany.id,
+                title: "Registreringsbevis",
+                category: .registrationCertificate,
+                originalFilename: "registreringsbevis.pdf",
+                uniformTypeIdentifier: "com.adobe.pdf",
+                extractedText: "Registreringsbevis för Nordisk Test AB.",
+                detectedOrganisationNumbers: "556016-0680",
+                tags: "bolagsverket,registrering",
+                pageCount: 2,
+                importedAt: .now.addingTimeInterval(-7 * 86_400),
+                sourceName: "UI-testfixture",
+                isAvailableOffline: true
             )
         )
         context.insert(

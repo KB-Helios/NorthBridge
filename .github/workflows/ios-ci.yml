@@ -1,0 +1,96 @@
+name: iOS 27 CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test on iOS 27
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro,OS=27.0
+      RESULT_BUNDLE: ${{ github.workspace }}/artifacts/NorthBridgeTests.xcresult
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Install pinned XcodeGen
+        run: |
+          brew install xcodegen
+          test "$(xcodegen --version)" = "Version: 2.46.0"
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild \
+            -project Bolagscenter.xcodeproj \
+            -scheme Bolagscenter \
+            -resolvePackageDependencies
+
+      - name: Build NorthBridge
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Bolagscenter.xcodeproj \
+            -scheme Bolagscenter \
+            -configuration Debug \
+            -destination "$DESTINATION" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            build | tee artifacts-build.log
+
+      - name: Run unit and UI tests
+        run: |
+          mkdir -p artifacts
+          set -o pipefail
+          xcodebuild \
+            -project Bolagscenter.xcodeproj \
+            -scheme Bolagscenter \
+            -configuration Debug \
+            -destination "$DESTINATION" \
+            -resultBundlePath "$RESULT_BUNDLE" \
+            -parallel-testing-enabled NO \
+            -collect-test-diagnostics never \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            test | tee artifacts/tests.log
+
+      - name: Export simulator screenshots
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -d "$RESULT_BUNDLE" ]; then
+            mkdir -p artifacts/screenshots
+            xcrun xcresulttool export attachments \
+              --path "$RESULT_BUNDLE" \
+              --output-path artifacts/screenshots
+          fi
+
+      - name: Verify generated project is committed
+        run: git diff --exit-code -- project.yml Bolagscenter.xcodeproj
+
+      - name: Upload generated project and test evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: northbridge-ios27-ci-${{ github.run_id }}
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            Bolagscenter.xcodeproj
+            artifacts
+            artifacts-build.log

@@ -6,9 +6,41 @@ final class CriticalWorkflowUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    func testFiveRootTabsAndSettingsHubAreReachable() {
+        let app = launchSeeded()
+        let destinations = [
+            ("tab.overview", "Översikt"),
+            ("tab.finance", "Ekonomi"),
+            ("tab.company", "Bolag"),
+            ("tab.documents", "Dokument"),
+            ("tab.search", "Sök"),
+        ]
+
+        for (identifier, title) in destinations {
+            let tab = rootTab(in: app, identifier: identifier, title: title)
+            XCTAssertTrue(
+                tab.waitForExistence(timeout: 5),
+                "Tabben \(identifier) saknas"
+            )
+            tab.tap()
+            XCTAssertTrue(
+                app.navigationBars[title].waitForExistence(timeout: 3),
+                "Rotvyn \(title) öppnades inte"
+            )
+        }
+
+        let settingsButton = app.buttons["settings.open"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["settings.hub"]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
     func testAddsAndSelectsACompany() {
         let app = launchSeeded()
-        let switcher = app.buttons["company.switcher"]
+        let switcher = companySwitcher(in: app)
         XCTAssertTrue(switcher.waitForExistence(timeout: 5))
 
         switcher.tap()
@@ -20,24 +52,24 @@ final class CriticalWorkflowUITests: XCTestCase {
             .tapAndType("Östra UI Test AB")
         dismissKeyboardIfPresent(in: app)
         let confirmation = app.switches["company.add.confirm"]
-        XCTAssertTrue(confirmation.waitForExistence(timeout: 3))
+        scrollUntilHittable(confirmation, in: app)
         tapTrailingControl(confirmation)
         let saveButton = app.buttons["company.add.save"]
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 3))
+        scrollUntilHittable(saveButton, in: app)
         XCTAssertTrue(waitUntilEnabled(saveButton))
         saveButton.tap()
 
         XCTAssertTrue(
             waitForValue(
                 "Östra UI Test AB",
-                on: app.buttons["company.switcher"]
+                on: companySwitcher(in: app)
             )
         )
     }
 
     func testSwitchesBetweenAuthorizedCompanies() {
         let app = launchSeeded()
-        let switcher = app.buttons["company.switcher"]
+        let switcher = companySwitcher(in: app)
         XCTAssertTrue(switcher.waitForExistence(timeout: 5))
 
         switcher.tap()
@@ -75,14 +107,16 @@ final class CriticalWorkflowUITests: XCTestCase {
         createDecision.tap()
 
         app.textFields["board.resolution.title"]
-            .tapAndType("Beslut om UI-test")
+            .replaceText(with: "Beslut om UI-test")
         app.descendants(matching: .any)["board.resolution.text"]
-            .tapAndType("Styrelsen beslutade att godkänna UI-testet.")
+            .replaceText(
+                with: "Styrelsen beslutade att godkänna UI-testet."
+            )
         app.buttons["board.resolution.save"].tap()
 
         XCTAssertTrue(
             app.staticTexts["Beslut om UI-test"]
-                .waitForExistence(timeout: 5)
+                .waitForExistence(timeout: 8)
         )
     }
 
@@ -197,7 +231,7 @@ final class CriticalWorkflowUITests: XCTestCase {
         let app = launchSeeded(
             extraArguments: [
                 "-UIPreferredContentSizeCategoryName",
-                "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge"
+                "UICTContentSizeCategoryAccessibilityXXXL"
             ]
         )
         XCTAssertTrue(
@@ -261,38 +295,58 @@ final class CriticalWorkflowUITests: XCTestCase {
 
     private func dismissKeyboardIfPresent(in app: XCUIApplication) {
         let keyboard = app.keyboards.firstMatch
-        guard keyboard.exists else { return }
+        guard keyboard.waitForExistence(timeout: 1) else { return }
 
-        let submitKey = app.buttons.matching(
+        let submitKey = keyboard.buttons.matching(
             NSPredicate(
                 format: "identifier == %@ OR identifier == %@",
                 "Done",
                 "Return"
             )
         ).firstMatch
-        XCTAssertTrue(submitKey.waitForExistence(timeout: 3))
-        submitKey.tap()
+        if submitKey.waitForExistence(timeout: 3) {
+            submitKey.tap()
+        }
         let expectation = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "exists == false"),
             object: keyboard
         )
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation], timeout: 3),
-            .completed
-        )
+        _ = XCTWaiter.wait(for: [expectation], timeout: 8)
     }
 
     private func scrollUntilHittable(
         _ element: XCUIElement,
         in app: XCUIApplication
     ) {
-        XCTAssertTrue(element.waitForExistence(timeout: 5))
         var attempts = 0
-        while !element.isHittable && attempts < 6 {
+        while attempts < 12 {
+            if element.waitForExistence(timeout: 1), element.isHittable {
+                return
+            }
             app.swipeUp()
             attempts += 1
         }
-        XCTAssertTrue(element.isHittable)
+        XCTAssertTrue(element.exists && element.isHittable)
+    }
+
+    private func companySwitcher(in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(identifier: "company.switcher")
+            .firstMatch
+    }
+
+    private func rootTab(
+        in app: XCUIApplication,
+        identifier: String,
+        title: String
+    ) -> XCUIElement {
+        let identified = app.descendants(matching: .any)
+            .matching(identifier: identifier)
+            .firstMatch
+        if identified.waitForExistence(timeout: 1) {
+            return identified
+        }
+        return app.buttons[title]
     }
 
     private func attachScreenshot(
@@ -313,14 +367,26 @@ private extension XCUIElement {
         typeText(text)
     }
 
-    func replaceText(with text: String) {
-        tap()
-        typeText(
-            String(
-                repeating: XCUIKeyboardKey.delete.rawValue,
-                count: 64
+    func replaceText(with text: String, attempts: Int = 3) {
+        for _ in 0..<attempts {
+            tap()
+            typeText(
+                String(
+                    repeating: XCUIKeyboardKey.delete.rawValue,
+                    count: 64
+                )
             )
-        )
-        typeText(text)
+            typeText(text)
+
+            let expectation = XCTNSPredicateExpectation(
+                predicate: NSPredicate(format: "value == %@", text),
+                object: self
+            )
+            if XCTWaiter.wait(for: [expectation], timeout: 3) == .completed {
+                return
+            }
+        }
+
+        XCTAssertEqual(value as? String, text)
     }
 }

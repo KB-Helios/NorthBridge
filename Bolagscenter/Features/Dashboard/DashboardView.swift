@@ -4,6 +4,8 @@ import SwiftUI
 @MainActor
 struct DashboardView: View {
     @Environment(AppEnvironment.self) private var environment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \CompanyRecord.registeredName) private var companies: [CompanyRecord]
     @Query(sort: \DeadlineRecord.dueAt) private var deadlines: [DeadlineRecord]
     @Query(sort: \DocumentRecord.importedAt, order: .reverse)
@@ -18,474 +20,486 @@ struct DashboardView: View {
     @Query private var integrations: [IntegrationRecord]
 
     var body: some View {
-        ScrollView {
-            LiquidGlassEffectGroup(spacing: AppSpacing.section) {
-                LazyVStack(alignment: .leading, spacing: AppSpacing.section) {
-                    if let company {
-                        companyHeader(company)
-                        pulseSection(company)
-                        nextActionSection
-                        upcomingDeadlinesSection
-                        administrativeAlertsSection(company)
-                        boardActionsSection
-                        recentDocumentsSection
-                        financialSummarySection
-                        activitySection
-                        integrationHealthSection
-                        dataFreshnessSection(company)
-                    } else {
-                        EmptyStateView(
-                            systemImage: "building.2",
-                            title: "Inget bolag valt",
-                            message: "Välj eller lägg till ett bolag för att se översikten."
-                        )
-                    }
+        NorthBridgeScreen(contentSpacing: dashboardContentSpacing) {
+            if let company {
+                companyHero(company)
+                executiveMetrics
+                nextAction
+                commandCenter
+
+                if !companyDocuments.isEmpty || !companyAuditEvents.isEmpty {
+                    recentPreviews
                 }
+            } else {
+                NorthBridgeEmptyState(
+                    systemImage: "building.2",
+                    title: "Inget bolag valt",
+                    message: "Välj eller lägg till ett bolag för att se översikten.",
+                    actionTitle: "Lägg till bolag",
+                    action: {
+                        environment.router(for: .overview)
+                            .navigate(to: .addCompany)
+                    }
+                )
+                .accessibilityIdentifier("overview.empty")
             }
-            .padding()
         }
-        .background(Color.appBackground)
         .navigationTitle("Översikt")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink(value: AppRoute.search) {
-                    Label("Sök", systemImage: "magnifyingglass")
+                NavigationLink(value: AppRoute.assistant) {
+                    Label("NorthBridge-assistent", systemImage: "sparkles")
                 }
+                .accessibilityIdentifier("overview.assistant")
             }
         }
-    }
-
-    private func companyHeader(_ company: CompanyRecord) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(company.registeredName)
-                        .font(.title2.bold())
-                    Text(formattedOrganisationNumber(company.organisationNumber))
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                StatusBadge(
-                    text: company.status.localizedName,
-                    kind: company.status == .active ? .positive : .warning
-                )
-            }
-
-            if let membership {
-                Label(
-                    membership.role.localizedName,
-                    systemImage: "person.text.rectangle"
-                )
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Image(systemName: "arrow.triangle.2.circlepath")
-                Text(lastSynchronizationText(company))
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
-        .padding(18)
-        .bolagscenterGlassSurface(
-            cornerRadius: 18,
-            tint: Color.bolagscenterBlue.opacity(0.08)
+        .animation(
+            reduceMotion || !environment.presentationPreferences.enhancedMotion
+                ? nil
+                : .snappy(duration: 0.28),
+            value: nextDashboardAction?.id
         )
-        .accessibilityElement(children: .combine)
     }
 
-    private func pulseSection(_ company: CompanyRecord) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeading(title: "Bolagspuls")
-
-            VStack(spacing: 0) {
-                pulseRow(
-                    title: "Deadlines",
-                    detail: deadlinePulseText,
-                    icon: "calendar.badge.clock",
-                    kind: openDeadlines.contains(where: { $0.dueAt < .now })
-                        ? .critical
-                        : .neutral
-                )
-                Divider()
-                pulseRow(
-                    title: "Dokument",
-                    detail: companyDocuments.isEmpty
-                        ? String(localized: "Inga dokument har importerats")
-                        : String(localized: "\(companyDocuments.count) dokument tillgängliga"),
-                    icon: "doc.text",
-                    kind: companyDocuments.isEmpty ? .warning : .positive
-                )
-                Divider()
-                pulseRow(
-                    title: "Registreringsuppgifter",
-                    detail: company.status == .unknown
-                        ? String(localized: "Väntar på verifiering från officiell källa")
-                        : String(localized: "Status hämtad från \(company.sourceName)"),
-                    icon: "checkmark.seal",
-                    kind: company.status == .unknown ? .warning : .positive
-                )
-                Divider()
-                pulseRow(
-                    title: "Ekonomiska signaler",
-                    detail: financialPulseText,
-                    icon: "chart.line.uptrend.xyaxis",
-                    kind: hasFinancialWarning ? .warning : .neutral
-                )
-                Divider()
-                pulseRow(
-                    title: "Styrelseåtgärder",
-                    detail: openActions.isEmpty
-                        ? String(localized: "Inga öppna åtgärder")
-                        : String(localized: "\(openActions.count) väntar på uppföljning"),
-                    icon: "checklist",
-                    kind: openActions.contains(where: { $0.dueAt < .now })
-                        ? .critical
-                        : (openActions.isEmpty ? .positive : .warning)
-                )
-                Divider()
-                pulseRow(
-                    title: "Integrationer",
-                    detail: integrationPulseText,
-                    icon: "arrow.triangle.2.circlepath",
-                    kind: unhealthyIntegrations.isEmpty ? .neutral : .warning
-                )
-            }
-            .bolagscenterGlassSurface(cornerRadius: 16)
-
-            Text("Bolagspuls förklarar registrerade riskfaktorer och är inte en juridisk kontroll eller certifiering.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func companyHero(_ company: CompanyRecord) -> some View {
+        NorthBridgeCompanyHero(
+            companyName: company.registeredName,
+            organisationNumber: formattedOrganisationNumber(
+                company.organisationNumber
+            ),
+            role: membership?.role.localizedName,
+            status: companyStatusKind(company.status),
+            statusText: company.status.localizedName,
+            freshness: freshnessText(company)
+        ) {
+            Image(
+                systemName: company.isStale
+                    ? "clock.badge.exclamationmark"
+                    : "checkmark.seal.fill"
+            )
+            .font(.title3)
+            .foregroundStyle(
+                company.isStale
+                    ? Color.northBridgeWarning
+                    : Color.northBridgePositive
+            )
+            .frame(
+                width: NorthBridgeMetrics.minimumTarget,
+                height: NorthBridgeMetrics.minimumTarget
+            )
+            .background(.white.opacity(0.12), in: Circle())
+            .accessibilityHidden(true)
         }
+        .accessibilityIdentifier("overview.companyHero")
     }
 
-    private var nextActionSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeading(title: "Nästa åtgärd")
+    private var executiveMetrics: some View {
+        VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+            NorthBridgeSectionHeader(
+                "I korthet",
+                subtitle: "Det viktigaste just nu"
+            )
 
-            if let nextDashboardAction {
-                NavigationLink(value: nextDashboardAction.route) {
-                    HStack(spacing: 12) {
-                        Image(systemName: nextDashboardAction.systemImage)
-                            .font(.title3)
-                            .foregroundStyle(.tint)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(nextDashboardAction.title)
-                                .font(.body.weight(.semibold))
-                            Text(nextDashboardAction.subtitle)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(16)
-                    .background(.background, in: .rect(cornerRadius: 16))
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: NorthBridgeSpacing.md) {
+                    deadlineMetric
+                    liquidityMetric
+                    actionMetric
                 }
-                .buttonStyle(.plain)
-            } else {
-                EmptyStateView(
-                    systemImage: "checkmark.circle",
-                    title: "Inga öppna åtgärder",
-                    message: "Lägg till en deadline eller styrelseåtgärd när något behöver följas upp."
-                )
-                .frame(minHeight: 180)
-            }
-        }
-    }
 
-    private var upcomingDeadlinesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionHeading(title: "Kommande deadlines")
-                Spacer()
-                NavigationLink("Visa alla", value: AppRoute.deadlines)
-                    .font(.subheadline.weight(.semibold))
-            }
-
-            if openDeadlines.isEmpty {
-                Text("Inga öppna deadlines.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(openDeadlines.prefix(3)) { deadline in
-                    NavigationLink(value: AppRoute.deadline(deadline.id)) {
-                        DeadlineRow(deadline: deadline)
-                    }
-                    .buttonStyle(.plain)
+                VStack(spacing: NorthBridgeSpacing.md) {
+                    deadlineMetric
+                    liquidityMetric
+                    actionMetric
                 }
             }
         }
+        .accessibilityIdentifier("overview.metrics")
     }
 
-    private func administrativeAlertsSection(
-        _ company: CompanyRecord
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeading(title: "Administrativa signaler")
-            if administrativeAlerts(company).isEmpty {
-                Label("Inga registrerade administrativa varningar", systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            } else {
-                ForEach(administrativeAlerts(company)) { alert in
-                    Label {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(alert.title)
-                                .font(.subheadline.weight(.semibold))
-                            Text(alert.detail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    } icon: {
-                        Image(systemName: alert.systemImage)
-                            .foregroundStyle(.orange)
-                    }
-                    .accessibilityElement(children: .combine)
-                }
-            }
+    private var deadlineMetric: some View {
+        NavigationLink(value: AppRoute.deadlines) {
+            NorthBridgeMetricTile(
+                title: "Nästa deadline",
+                value: nextDeadlineValue,
+                systemImage: "calendar.badge.clock",
+                tint: deadlineTint,
+                footnote: nextDeadlineFootnote
+            )
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("overview.metric.deadline")
     }
 
-    private var boardActionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionHeading(title: "Styrelseåtgärder")
-                Spacer()
-                NavigationLink("Öppna", value: AppRoute.actionTracker)
-                    .font(.subheadline.weight(.semibold))
-            }
-            if openActions.isEmpty {
-                Text("Inga öppna styrelseåtgärder.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(openActions.prefix(3)) { action in
-                    NavigationLink(value: AppRoute.actionTracker) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(action.title)
-                                    .foregroundStyle(.primary)
-                                Text("\(action.assignedTo) · \(action.dueAt.formatted(date: .abbreviated, time: .omitted))")
-                                    .font(.caption)
-                                    .foregroundStyle(
-                                        action.dueAt < .now
-                                            ? Color.red
-                                            : Color.secondary
-                                    )
-                            }
-                            Spacer()
-                            StatusBadge(
-                                text: action.status.localizedName,
-                                kind: action.status == .blocked ? .critical : .warning
-                            )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+    private var liquidityMetric: some View {
+        Button {
+            environment.selectedTab = .finance
+        } label: {
+            NorthBridgeMetricTile(
+                title: liquidityMetricTitle,
+                value: liquidityMetricValue,
+                systemImage: hidesFinancialValues ? "eye.slash" : "banknote",
+                tint: .northBridgeInformational,
+                footnote: liquidityMetricFootnote
+            )
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel(liquidityAccessibilityLabel)
+        .accessibilityIdentifier("overview.metric.liquidity")
     }
 
-    private var recentDocumentsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeading(title: "Senaste dokument")
-            if companyDocuments.isEmpty {
-                Text("Inga dokument har importerats.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(companyDocuments.prefix(3)) { document in
-                    NavigationLink(value: AppRoute.document(document.id)) {
-                        HStack {
-                            Image(systemName: "doc.text")
-                                .foregroundStyle(.tint)
-                            VStack(alignment: .leading) {
-                                Text(document.title)
-                                    .foregroundStyle(.primary)
-                                Text(document.category.localizedName)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(document.importedAt, format: .dateTime.day().month())
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
+    private var actionMetric: some View {
+        NavigationLink(value: AppRoute.actionTracker) {
+            NorthBridgeMetricTile(
+                title: "Öppna åtgärder",
+                value: openActions.count.formatted(),
+                systemImage: "checklist",
+                tint: openActions.contains(where: { $0.dueAt < .now })
+                    ? .northBridgeCritical
+                    : .northBridgeBlue,
+                footnote: openActionFootnote
+            )
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("overview.metric.actions")
     }
 
     @ViewBuilder
-    private var financialSummarySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionHeading(title: "Finansiell sammanfattning")
-                Spacer()
-                if canViewFinance {
-                    Button("Öppna ekonomi") {
-                        environment.selectedTab = .finance
-                    }
-                    .font(.subheadline.weight(.semibold))
-                }
-            }
+    private var nextAction: some View {
+        if let action = nextDashboardAction {
+            VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+                NorthBridgeSectionHeader("Nästa åtgärd")
 
-            if !canViewFinance {
-                Label(
-                    "Din roll saknar behörighet att visa finansiella värden.",
-                    systemImage: "lock.fill"
-                )
-                .foregroundStyle(.secondary)
-            } else if summaryMetrics.isEmpty {
-                Text("Inga finansiella värden har registrerats.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(summaryMetrics) { metric in
-                    NavigationLink(value: AppRoute.financialMetric(metric.id)) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(metric.kind.localizedName)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                Text(
-                                    metric.amount.formatted(
-                                        .currency(code: metric.currencyCode)
-                                    )
+                NavigationLink(value: action.route) {
+                    HStack(alignment: .center, spacing: NorthBridgeSpacing.lg) {
+                        Image(systemName: action.systemImage)
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(action.tint)
+                            .frame(width: 48, height: 48)
+                            .background(
+                                action.tint.opacity(0.12),
+                                in: RoundedRectangle(
+                                    cornerRadius: NorthBridgeRadius.control,
+                                    style: .continuous
                                 )
-                                .font(.title3.bold())
-                                .foregroundStyle(.primary)
-                                .contentTransition(.numericText())
-                            }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 3) {
-                                Text(metric.valueState.localizedName)
-                                Text(metric.sourceName)
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        }
-                        .padding(14)
-                        .bolagscenterGlassSurface(
-                            cornerRadius: 14,
-                            tint: Color.bolagscenterBlue.opacity(0.04)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
+                            )
+                            .accessibilityHidden(true)
 
-    private var activitySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionHeading(title: "Senaste aktivitet")
-                Spacer()
-                NavigationLink("Visa historik", value: AppRoute.activity)
-                    .font(.subheadline.weight(.semibold))
-            }
-            if companyAuditEvents.isEmpty {
-                Text("Ingen aktivitet har registrerats.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(companyAuditEvents.prefix(4)) { event in
-                    HStack(alignment: .top, spacing: 10) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .foregroundStyle(.secondary)
-                            .frame(width: 22)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(event.summary)
+                        VStack(alignment: .leading, spacing: NorthBridgeSpacing.xs) {
+                            Text(action.eyebrow)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(action.tint)
+                                .textCase(.uppercase)
+                            Text(action.title)
+                                .font(.headline)
+                                .foregroundStyle(Color.northBridgeTextPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(action.subtitle)
                                 .font(.subheadline)
-                            Text(event.occurredAt, format: .relative(presentation: .named))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Color.northBridgeTextSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
-                    }
-                }
-            }
-        }
-    }
 
-    private var integrationHealthSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                SectionHeading(title: "Integrationshälsa")
-                Spacer()
-                NavigationLink("Hantera", value: AppRoute.integrations)
-                    .font(.subheadline.weight(.semibold))
-            }
-            if companyIntegrations.isEmpty {
-                Text("Inga integrationer har konfigurerats.")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(companyIntegrations) { integration in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(integration.displayName)
-                            Text(integrationLastActivity(integration))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        StatusBadge(
-                            text: integration.state.localizedName,
-                            kind: integrationBadgeKind(integration.state)
+                        Spacer(minLength: NorthBridgeSpacing.sm)
+
+                        Image(systemName: "arrow.right")
+                            .font(.headline)
+                            .foregroundStyle(.tint)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(NorthBridgeSpacing.xl)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        Color.northBridgeRaisedSurface,
+                        in: RoundedRectangle(
+                            cornerRadius: NorthBridgeRadius.card,
+                            style: .continuous
                         )
+                    )
+                    .overlay {
+                        RoundedRectangle(
+                            cornerRadius: NorthBridgeRadius.card,
+                            style: .continuous
+                        )
+                        .stroke(action.tint.opacity(0.22), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityHint("Öppnar åtgärden")
+                .accessibilityIdentifier("overview.nextAction")
+            }
+        } else {
+            healthyState
+        }
+    }
+
+    private var healthyState: some View {
+        HStack(alignment: .top, spacing: NorthBridgeSpacing.md) {
+            Image(systemName: "checkmark.shield.fill")
+                .font(.title2)
+                .foregroundStyle(Color.northBridgePositive)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: NorthBridgeSpacing.xs) {
+                Text("Allt ser bra ut")
+                    .font(.headline)
+                Text("Inga registrerade deadlines eller åtgärder behöver din uppmärksamhet just nu.")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.northBridgeTextSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(NorthBridgeSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.northBridgePositive.opacity(0.09),
+            in: RoundedRectangle(
+                cornerRadius: NorthBridgeRadius.card,
+                style: .continuous
+            )
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isSummaryElement)
+        .accessibilityIdentifier("overview.healthy")
+    }
+
+    private var commandCenter: some View {
+        VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+            NorthBridgeSectionHeader(
+                "Kommandocenter",
+                subtitle: "Gå direkt till bolagets viktigaste arbetsytor"
+            )
+
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: NorthBridgeSpacing.md) {
+                    deadlineCommand
+                    documentCommand
+                    governanceCommand
+                    integrationCommand
+                }
+            } else {
+                Grid(
+                    horizontalSpacing: NorthBridgeSpacing.md,
+                    verticalSpacing: NorthBridgeSpacing.md
+                ) {
+                    GridRow {
+                        deadlineCommand
+                        documentCommand
+                    }
+                    GridRow {
+                        governanceCommand
+                        integrationCommand
+                    }
+                }
+            }
+        }
+        .accessibilityIdentifier("overview.commands")
+    }
+
+    private var deadlineCommand: some View {
+        NavigationLink(value: AppRoute.deadlines) {
+            NorthBridgeCommandCard(
+                title: "Deadlines",
+                detail: deadlineCommandDetail,
+                systemImage: "calendar.badge.clock",
+                tint: deadlineTint,
+                badge: openDeadlines.isEmpty ? nil : openDeadlines.count.formatted()
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var documentCommand: some View {
+        Button {
+            environment.selectedTab = .documents
+        } label: {
+            NorthBridgeCommandCard(
+                title: "Dokument",
+                detail: documentCommandDetail,
+                systemImage: "doc.text",
+                tint: .northBridgeInformational,
+                badge: companyDocuments.isEmpty
+                    ? nil
+                    : companyDocuments.count.formatted()
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var governanceCommand: some View {
+        NavigationLink(value: AppRoute.boardWorkspace) {
+            NorthBridgeCommandCard(
+                title: "Styrning",
+                detail: governanceCommandDetail,
+                systemImage: "person.3.sequence",
+                tint: .northBridgeBlue,
+                badge: openActions.isEmpty ? nil : openActions.count.formatted()
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var integrationCommand: some View {
+        NavigationLink(value: AppRoute.integrations) {
+            NorthBridgeCommandCard(
+                title: "Integrationer",
+                detail: integrationCommandDetail,
+                systemImage: "arrow.triangle.2.circlepath",
+                tint: unhealthyIntegrations.isEmpty
+                    ? .northBridgePositive
+                    : .northBridgeWarning,
+                badge: unhealthyIntegrations.isEmpty
+                    ? nil
+                    : unhealthyIntegrations.count.formatted()
+            )
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var recentPreviews: some View {
+        VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+            NorthBridgeSectionHeader("Senaste nytt")
+
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: NorthBridgeSpacing.md) {
+                    if !companyAuditEvents.isEmpty {
+                        recentActivityCard
+                    }
+                    if !companyDocuments.isEmpty {
+                        recentDocumentsCard
+                    }
+                }
+
+                VStack(spacing: NorthBridgeSpacing.md) {
+                    if !companyAuditEvents.isEmpty {
+                        recentActivityCard
+                    }
+                    if !companyDocuments.isEmpty {
+                        recentDocumentsCard
                     }
                 }
             }
         }
     }
 
-    private func dataFreshnessSection(_ company: CompanyRecord) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            SectionHeading(title: "Datakvalitet")
-            SourceFooter(
-                source: company.sourceName,
-                updatedAt: company.sourceUpdatedAt,
-                stale: company.isStale
-            )
-            if company.status == .unknown {
-                Label(
-                    "Manuella uppgifter är inte verifierade mot en myndighetskälla.",
-                    systemImage: "info.circle"
-                )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+    private var recentActivityCard: some View {
+        VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+            HStack {
+                Label("Aktivitet", systemImage: "clock.arrow.circlepath")
+                    .font(.headline)
+                Spacer()
+                NavigationLink("Visa alla", value: AppRoute.activity)
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            ForEach(companyAuditEvents.prefix(dashboardPreviewLimit)) { event in
+                HStack(alignment: .top, spacing: NorthBridgeSpacing.sm) {
+                    Circle()
+                        .fill(Color.northBridgeInformational)
+                        .frame(width: 7, height: 7)
+                        .padding(.top, 6)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: NorthBridgeSpacing.xs) {
+                        Text(event.summary)
+                            .font(.subheadline)
+                            .lineLimit(2)
+                        Text(
+                            event.occurredAt,
+                            format: .relative(presentation: .named)
+                        )
+                        .font(.caption)
+                        .foregroundStyle(Color.northBridgeTextSecondary)
+                    }
+                }
+                .accessibilityElement(children: .combine)
             }
         }
+        .padding(NorthBridgeSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.northBridgeSurface,
+            in: RoundedRectangle(
+                cornerRadius: NorthBridgeRadius.card,
+                style: .continuous
+            )
+        )
     }
 
-    private func pulseRow(
-        title: String,
-        detail: String,
-        icon: String,
-        kind: StatusBadge.Kind
-    ) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .frame(width: 28)
-                .foregroundStyle(kind.color)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                Text(detail)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private var recentDocumentsCard: some View {
+        VStack(alignment: .leading, spacing: NorthBridgeSpacing.md) {
+            HStack {
+                Label("Dokument", systemImage: "doc.text")
+                    .font(.headline)
+                Spacer()
+                Button("Visa alla") {
+                    environment.selectedTab = .documents
+                }
+                .font(.subheadline.weight(.semibold))
             }
-            Spacer()
+
+            ForEach(companyDocuments.prefix(dashboardPreviewLimit)) { document in
+                NavigationLink(value: AppRoute.document(document.id)) {
+                    HStack(spacing: NorthBridgeSpacing.sm) {
+                        Image(systemName: "doc.text.fill")
+                            .foregroundStyle(Color.northBridgeInformational)
+                            .frame(width: 24)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: NorthBridgeSpacing.xs) {
+                            Text(document.title)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(Color.northBridgeTextPrimary)
+                                .lineLimit(2)
+                            Text(
+                                "\(document.category.localizedName) · \(document.importedAt.formatted(date: .abbreviated, time: .omitted))"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(Color.northBridgeTextSecondary)
+                        }
+                        Spacer(minLength: NorthBridgeSpacing.xs)
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(14)
-        .accessibilityElement(children: .combine)
+        .padding(NorthBridgeSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            Color.northBridgeSurface,
+            in: RoundedRectangle(
+                cornerRadius: NorthBridgeRadius.card,
+                style: .continuous
+            )
+        )
     }
 
     private var company: CompanyRecord? {
         companies.first { $0.id == environment.selectedCompanyID }
+    }
+
+    private var hidesFinancialValues: Bool {
+        environment.presentationPreferences.financialPrivacyBlur
+    }
+
+    private var dashboardContentSpacing: CGFloat {
+        environment.presentationPreferences.dashboardDensity == .compact
+            ? NorthBridgeSpacing.xl
+            : NorthBridgeSpacing.xxl
+    }
+
+    private var dashboardPreviewLimit: Int {
+        environment.presentationPreferences.dashboardDensity == .compact ? 2 : 3
     }
 
     private var membership: CompanyMembershipRecord? {
@@ -554,174 +568,234 @@ struct DashboardView: View {
         }
     }
 
-    private var summaryMetrics: [FinancialMetricRecord] {
+    private var latestLiquidity: FinancialMetricRecord? {
         let preferredKinds: [FinancialMetricKind] = [
             .availableLiquidity,
-            .revenue,
+            .bankBalance,
             .operatingResult,
         ]
-        return preferredKinds.compactMap { kind in
+        return preferredKinds.lazy.compactMap { kind in
             companyMetrics
                 .filter { $0.kind == kind }
                 .max { $0.periodEnd < $1.periodEnd }
+        }.first
+    }
+
+    private var nextDeadlineValue: String {
+        guard let deadline = openDeadlines.first else {
+            return String(localized: "Ingen")
         }
+        if deadline.dueAt < .now {
+            return String(localized: "Försenad")
+        }
+        return deadline.dueAt.formatted(.dateTime.day().month(.abbreviated))
     }
 
-    private var latestOperatingResult: FinancialMetricRecord? {
-        companyMetrics
-            .filter { $0.kind == .operatingResult }
-            .max { $0.periodEnd < $1.periodEnd }
+    private var nextDeadlineFootnote: String? {
+        guard let deadline = openDeadlines.first else {
+            return String(localized: "Inget planerat")
+        }
+        return deadline.title
     }
 
-    private var hasFinancialWarning: Bool {
-        latestOperatingResult.map { $0.amount < 0 } ?? false
+    private var deadlineTint: Color {
+        openDeadlines.contains(where: { $0.dueAt < .now })
+            ? .northBridgeCritical
+            : .northBridgeWarning
     }
 
-    private var deadlinePulseText: String {
-        let overdueCount = openDeadlines.filter { $0.dueAt < .now }.count
-        if overdueCount > 0 {
-            return String(localized: "\(overdueCount) försenade")
+    private var openActionFootnote: String? {
+        if openActions.isEmpty {
+            return String(localized: "Inget att följa upp")
+        }
+        let overdue = openActions.filter { $0.dueAt < .now }.count
+        return overdue > 0
+            ? String(localized: "\(overdue) försenade")
+            : String(localized: "Under uppföljning")
+    }
+
+    private var liquidityMetricTitle: LocalizedStringKey {
+        latestLiquidity?.kind == .operatingResult
+            ? "Rörelseresultat"
+            : "Likviditet"
+    }
+
+    private var liquidityMetricValue: String {
+        guard canViewFinance else {
+            return String(localized: "Skyddat")
+        }
+        guard !hidesFinancialValues else {
+            return "••••••"
+        }
+        guard let latestLiquidity else {
+            return String(localized: "Saknas")
+        }
+        return latestLiquidity.amount.formatted(
+            .currency(code: latestLiquidity.currencyCode)
+                .precision(.fractionLength(0))
+        )
+    }
+
+    private var liquidityMetricFootnote: String? {
+        guard canViewFinance else {
+            return String(localized: "Behörighet krävs")
+        }
+        guard !hidesFinancialValues else {
+            return String(localized: "Dolt i ekonomiinställningar")
+        }
+        return latestLiquidity.map {
+            $0.periodEnd.formatted(.dateTime.month(.abbreviated).year())
+        } ?? String(localized: "Inget underlag")
+    }
+
+    private var liquidityAccessibilityLabel: String {
+        if !canViewFinance {
+            return String(localized: "Finansiellt värde, behörighet krävs")
+        }
+        if hidesFinancialValues {
+            return String(localized: "Finansiellt värde dolt")
+        }
+        return String(
+            localized: "\(liquidityMetricAccessibilityTitle), \(liquidityMetricValue)"
+        )
+    }
+
+    private var liquidityMetricAccessibilityTitle: String {
+        latestLiquidity?.kind == .operatingResult
+            ? String(localized: "Rörelseresultat")
+            : String(localized: "Likviditet")
+    }
+
+    private var deadlineCommandDetail: String {
+        let overdue = openDeadlines.filter { $0.dueAt < .now }.count
+        if overdue > 0 {
+            return String(localized: "\(overdue) behöver hanteras nu")
         }
         return openDeadlines.isEmpty
-            ? String(localized: "Inga öppna deadlines")
-            : String(localized: "\(openDeadlines.count) öppna")
+            ? String(localized: "Inget öppet")
+            : String(localized: "Nästa är \(nextDeadlineValue.lowercased())")
     }
 
-    private var financialPulseText: String {
-        guard canViewFinance else {
-            return String(localized: "Dold för aktuell roll")
-        }
-        guard let latestOperatingResult else {
-            return String(localized: "Underlag saknas")
-        }
-        if latestOperatingResult.amount < 0 {
-            return String(localized: "Senaste registrerade rörelseresultat är negativt")
-        }
-        return String(localized: "Ingen varningssignal i senaste rörelseresultatet")
+    private var documentCommandDetail: String {
+        companyDocuments.isEmpty
+            ? String(localized: "Importera första dokumentet")
+            : String(localized: "\(companyDocuments.count) i valvet")
     }
 
-    private var integrationPulseText: String {
-        if companyIntegrations.isEmpty {
-            return String(localized: "Inga integrationer konfigurerade")
-        }
+    private var governanceCommandDetail: String {
+        openActions.isEmpty
+            ? String(localized: "Styrelsearbetet är i fas")
+            : String(localized: "\(openActions.count) öppna åtgärder")
+    }
+
+    private var integrationCommandDetail: String {
         if !unhealthyIntegrations.isEmpty {
-            return String(localized: "\(unhealthyIntegrations.count) kräver uppmärksamhet")
+            return String(localized: "\(unhealthyIntegrations.count) kräver tillsyn")
         }
-        let connectedCount = companyIntegrations.filter { $0.state == .connected }.count
-        return connectedCount > 0
-            ? String(localized: "\(connectedCount) anslutna")
-            : String(localized: "Ingen integration är ansluten")
+        let connected = companyIntegrations.filter { $0.state == .connected }.count
+        return connected > 0
+            ? String(localized: "\(connected) anslutna")
+            : String(localized: "Anslut datakällor")
     }
 
     private var nextDashboardAction: DashboardActionSummary? {
-        let deadlineSummary = openDeadlines.first.map {
+        let deadline = openDeadlines.first.map {
             DashboardActionSummary(
+                id: "deadline-\($0.id.uuidString)",
+                eyebrow: $0.dueAt < .now ? "Försenad deadline" : "Kommande deadline",
                 title: $0.title,
-                subtitle: String(
-                    localized: "Deadline \($0.dueAt.formatted(date: .abbreviated, time: .omitted))"
-                ),
+                subtitle: $0.dueAt.formatted(date: .long, time: .omitted),
                 dueAt: $0.dueAt,
                 systemImage: "calendar.badge.clock",
+                tint: $0.dueAt < .now
+                    ? .northBridgeCritical
+                    : .northBridgeWarning,
                 route: .deadline($0.id)
             )
         }
-        let actionSummary = openActions.first.map {
+        let action = openActions.first.map {
             DashboardActionSummary(
+                id: "action-\($0.id.uuidString)",
+                eyebrow: "Styrelseåtgärd",
                 title: $0.title,
                 subtitle: String(
                     localized: "\($0.assignedTo) · \($0.dueAt.formatted(date: .abbreviated, time: .omitted))"
                 ),
                 dueAt: $0.dueAt,
                 systemImage: "checklist",
+                tint: $0.dueAt < .now
+                    ? .northBridgeCritical
+                    : .northBridgeBlue,
                 route: .actionTracker
             )
         }
-        return [deadlineSummary, actionSummary]
-            .compactMap { $0 }
-            .min { $0.dueAt < $1.dueAt }
-    }
 
-    private func administrativeAlerts(
-        _ company: CompanyRecord
-    ) -> [DashboardAdministrativeAlert] {
-        var values: [DashboardAdministrativeAlert] = []
-        let overdueDeadlines = openDeadlines.filter { $0.dueAt < .now }.count
-        if overdueDeadlines > 0 {
-            values.append(
-                DashboardAdministrativeAlert(
-                    id: "overdue-deadlines",
-                    title: "\(overdueDeadlines) försenade deadlines",
-                    detail: "Öppna deadlinecentret och registrera nästa åtgärd.",
-                    systemImage: "calendar.badge.exclamationmark"
-                )
+        if let dated = [deadline, action]
+            .compactMap({ $0 })
+            .min(by: { $0.dueAt < $1.dueAt }) {
+            return dated
+        }
+
+        guard let company else { return nil }
+        if company.status == .unknown || company.isStale {
+            return DashboardActionSummary(
+                id: "company-quality",
+                eyebrow: "Bolagsuppgifter",
+                title: company.status == .unknown
+                    ? String(localized: "Komplettera bolagsprofilen")
+                    : String(localized: "Granska inaktuella uppgifter"),
+                subtitle: freshnessText(company),
+                dueAt: .distantFuture,
+                systemImage: "building.2.crop.circle",
+                tint: .northBridgeWarning,
+                route: .companyDetails
             )
         }
-        if company.status == .unknown {
-            values.append(
-                DashboardAdministrativeAlert(
-                    id: "unverified-company",
-                    title: "Bolagsstatus är inte verifierad",
-                    detail: "Anslut en behörig officiell datakälla när den finns tillgänglig.",
-                    systemImage: "building.2.crop.circle"
-                )
-            )
-        }
-        if company.isStale {
-            values.append(
-                DashboardAdministrativeAlert(
-                    id: "stale-company",
-                    title: "Bolagsuppgifterna är inaktuella",
-                    detail: lastSynchronizationText(company),
-                    systemImage: "clock.badge.exclamationmark"
-                )
-            )
-        }
+
         if !unhealthyIntegrations.isEmpty {
-            values.append(
-                DashboardAdministrativeAlert(
-                    id: "integration-health",
-                    title: "\(unhealthyIntegrations.count) integrationer kräver åtgärd",
-                    detail: "Kontrollera behörighet, fel och senaste lyckade synkronisering.",
-                    systemImage: "arrow.triangle.2.circlepath"
-                )
+            return DashboardActionSummary(
+                id: "integration-health",
+                eyebrow: "Integrationer",
+                title: String(localized: "Återställ dataflödet"),
+                subtitle: String(
+                    localized: "\(unhealthyIntegrations.count) integrationer kräver tillsyn"
+                ),
+                dueAt: .distantFuture,
+                systemImage: "arrow.triangle.2.circlepath",
+                tint: .northBridgeWarning,
+                route: .integrations
             )
         }
-        return values
+
+        return nil
     }
 
-    private func lastSynchronizationText(_ company: CompanyRecord) -> String {
+    private func freshnessText(_ company: CompanyRecord) -> String {
+        if company.isStale {
+            return String(localized: "Uppgifterna behöver uppdateras")
+        }
         guard let date = company.lastSynchronizedAt else {
-            return String(localized: "Aldrig synkroniserad")
+            return String(
+                localized: "Källa: \(company.sourceName) · aldrig synkroniserad"
+            )
         }
         return String(
-            localized: "Senast synkroniserad \(date.formatted(date: .abbreviated, time: .shortened))"
+            localized: "Källa: \(company.sourceName) · \(date.formatted(date: .abbreviated, time: .shortened))"
         )
     }
 
-    private func integrationLastActivity(
-        _ integration: IntegrationRecord
-    ) -> String {
-        if let lastSuccessfulAt = integration.lastSuccessfulAt {
-            return String(
-                localized: "Senast lyckad \(lastSuccessfulAt.formatted(date: .abbreviated, time: .shortened))"
-            )
-        }
-        if let lastAttemptedAt = integration.lastAttemptedAt {
-            return String(
-                localized: "Senast försökt \(lastAttemptedAt.formatted(date: .abbreviated, time: .shortened))"
-            )
-        }
-        return String(localized: "Ingen synkronisering utförd")
-    }
-
-    private func integrationBadgeKind(
-        _ state: IntegrationState
-    ) -> StatusBadge.Kind {
-        switch state {
-        case .connected: .positive
-        case .refreshing: .neutral
-        case .disconnected, .unauthorized, .stale, .rateLimited: .warning
-        case .unavailable, .failed: .critical
+    private func companyStatusKind(
+        _ status: CompanyStatus
+    ) -> NorthBridgeStatusKind {
+        switch status {
+        case .active:
+            .positive
+        case .unknown:
+            .warning
+        case .inactive:
+            .neutral
+        case .liquidation, .bankruptcy:
+            .critical
         }
     }
 
@@ -731,16 +805,12 @@ struct DashboardView: View {
 }
 
 private struct DashboardActionSummary {
+    let id: String
+    let eyebrow: String
     let title: String
     let subtitle: String
     let dueAt: Date
     let systemImage: String
+    let tint: Color
     let route: AppRoute
-}
-
-private struct DashboardAdministrativeAlert: Identifiable {
-    let id: String
-    let title: String
-    let detail: String
-    let systemImage: String
 }

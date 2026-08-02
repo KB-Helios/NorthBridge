@@ -14,6 +14,7 @@
 		126AC8E0B97EDD007A920470 /* SubscriptionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B73787DCD480ADEF4D7E39 /* SubscriptionSettingsView.swift */; };
 		162265C78593A721BFEDE1BA /* DocumentMetadataExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC234CC3F9104B66D3784B69 /* DocumentMetadataExtractorTests.swift */; };
 		1B2BACE7C156E85B03D16AE6 /* BolagscenterIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C76C2FE8D38CAD4CB73384 /* BolagscenterIntents.swift */; };
+		1B9BD20B0F153D60DC2CA27A /* Pow in Frameworks */ = {isa = PBXBuildFile; productRef = 4F1F3C866E84CEDA4054F5C7 /* Pow */; };
 		222D18A41BE0F8F222100EAF /* SubscriptionAccessPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B96D3AB5EF9657A1CA0A882B /* SubscriptionAccessPolicyTests.swift */; };
 		2342548C246D4A96450FC822 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855F37624E684A71D75BAF76 /* KeychainStore.swift */; };
 		25ABB4B1BDA41457ABA5CEB6 /* CriticalWorkflowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9384DD52F122307B022024D /* CriticalWorkflowUITests.swift */; };
@@ -29,8 +30,10 @@
 		4A246FAF0341098B0D47BA54 /* OwnershipViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E014CCFCF72162B4B8AF5B17 /* OwnershipViews.swift */; };
 		4D2A375651B9FCA91FF50769 /* OrganisationNumberTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B99266CD5DD4F7265DBC02 /* OrganisationNumberTests.swift */; };
 		50773E325F5F0CC28FE49C69 /* OwnershipLedgerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53803ECFA0DF0165B3AEDCA9 /* OwnershipLedgerTests.swift */; };
+		50913B35A06B7BD21D716D6D /* ActivityHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0264FB9DCE6EBB9E6C388A7B /* ActivityHistoryView.swift */; };
 		51AFB5F050C220E7614CC4C9 /* CompanyWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E037A1BEE32A1FCE152D52E3 /* CompanyWorkspaceView.swift */; };
 		528FD4A2B449B4BFBD1837E3 /* FinancialPlanningModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C55B592E8010EEC034F3C72 /* FinancialPlanningModels.swift */; };
+		5465CE5527E37EDD22C9662E /* VisualRegressionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022B696F8A0D2A4B5EAA3793 /* VisualRegressionUITests.swift */; };
 		599D57BF8ADD52FBDA96B8E7 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6BB4CCE6DECA537B5C18FA2 /* NotificationSettingsView.swift */; };
 		5A6B6CE230E1D71A215BA91A /* AccountDataExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D39B4AA67DFAB2FB28CEABD6 /* AccountDataExportService.swift */; };
 		5AAB007D20E86B56B705E672 /* FinanceDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706E232EA0C4A896AE21BC3E /* FinanceDetailViews.swift */; };
@@ -41,6 +44,9 @@
 		6BDD4F4CEDB7092F10E034EA /* OrganisationNumber.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BCEFC67625EC19ED58EAF82 /* OrganisationNumber.swift */; };
 		74CFD98D3050F89BB9054C7B /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 344FEBB154F731F9D08DA331 /* WidgetSnapshot.swift */; };
 		767F56BE2AB1C63834DEBE4B /* AccountDataExportServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E8CF4F1DACDD98A7FE9C7D /* AccountDataExportServiceTests.swift */; };
+		79FE1992670265FB1176839D /* NorthBridgePresentationPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBCDC6D0DEA7496E0A9F58AC /* NorthBridgePresentationPreferencesTests.swift */; };
+		7FF8CFBCA2D58F9088E6A7EA /* NorthBridgeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29895A5122FDA44719E7C8D /* NorthBridgeComponents.swift */; };
+		80BF38BC6C5E41ABFA3B4101 /* NorthBridgePresentationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 074C29255090D6C199D8630F /* NorthBridgePresentationPreferences.swift */; };
 		81E5087E097A97676D4DB50F /* MembershipPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7F380910996FF0C108048EB /* MembershipPolicyTests.swift */; };
 		82F6E81B66BFD2F0BE0E783A /* UITestFixtureSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C08AD792C6B5E9866D08D72 /* UITestFixtureSeeder.swift */; };
 		884A7FFE49BB79BC58744C0A /* BolagscenterSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD40A18DD54DC28A9F2D0BA /* BolagscenterSchema.swift */; };
@@ -52,10 +58,12 @@
 		93D9FD32C12FDA20790490A0 /* AppLockController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FC3B3F32E8F05C572ECB3E7 /* AppLockController.swift */; };
 		94D6BD8C06E6B3667CD450FC /* AccountDeletionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D46DE27E83EF5BE75D1CE0 /* AccountDeletionService.swift */; };
 		9595C27ECA7AD5DE2E1F1E4B /* SessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781AFF7776981FF024D1B022 /* SessionController.swift */; };
+		961F27A18586E18EB8D5D64C /* NorthBridgeLiquidSwipeTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4787634FB6C8C971B7718E5 /* NorthBridgeLiquidSwipeTransition.swift */; };
 		97562A27C032C4B129C5D2EB /* ShareCertificateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10F401A6902CF10E308D856 /* ShareCertificateViews.swift */; };
 		998936E8D1919D2EA24A683F /* SecureLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B325140BCB0BEEB05839EB1D /* SecureLogger.swift */; };
 		99C55FADC0DB8AF2F73B4295 /* BolagscenterWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251CB3E52397C2028B39B805 /* BolagscenterWidget.swift */; };
 		9A3F34FD31DB138EF5B51E13 /* UserRoleManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706AEDEA8DC105EB6EF29450 /* UserRoleManagementView.swift */; };
+		9AD20A12A22EC777A5B72326 /* NorthBridgeLiquidSwipeShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09C136EA68277DF80FB46922 /* NorthBridgeLiquidSwipeShape.swift */; };
 		9C2AD98396C9A2913B192427 /* CompanyRegistryRefreshServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2D9EE9DB997FE4B6521174 /* CompanyRegistryRefreshServiceTests.swift */; };
 		9F3B96D186498D09E0518723 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62D76F10B08A455CBFF11188 /* RootView.swift */; };
 		A332A46714166F4192707DA6 /* FinancialPlanningCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD660EAD77AB2CF30966CCB1 /* FinancialPlanningCalculatorTests.swift */; };
@@ -97,6 +105,7 @@
 		E65DC3ABEB8151A9866D0163 /* GlobalSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2A246C0EA7C6D6F29BADC07 /* GlobalSearchView.swift */; };
 		E70122913109FA1DEEFA28C6 /* BoardWorkspaceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 349B4178DEC3667EED0492D5 /* BoardWorkspaceViews.swift */; };
 		F39130D087617668841A2CAA /* DeadlineRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FFA845B007AB524101C1B7 /* DeadlineRules.swift */; };
+		F947D0B671A33F87654D4DDE /* NorthBridgeMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DD98F5D791355C36CAC981 /* NorthBridgeMotion.swift */; };
 		FB40EEB4B9567C71B7A1283A /* MembershipPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1BC1EDF7D3D464BDBC778B8 /* MembershipPolicy.swift */; };
 		FE94FC8A93142E462809FB8B /* RemoteNotificationRegistrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3A8185C3B9FBCFEC141831 /* RemoteNotificationRegistrationTests.swift */; };
 /* End PBXBuildFile section */
@@ -142,7 +151,11 @@
 /* Begin PBXFileReference section */
 		01475F296912ADBD3AC4AFF0 /* CompanyProfileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyProfileDetailView.swift; sourceTree = "<group>"; };
 		020CE74A1E587ABD5E06AFDC /* OwnershipLedger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnershipLedger.swift; sourceTree = "<group>"; };
+		022B696F8A0D2A4B5EAA3793 /* VisualRegressionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualRegressionUITests.swift; sourceTree = "<group>"; };
+		0264FB9DCE6EBB9E6C388A7B /* ActivityHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityHistoryView.swift; sourceTree = "<group>"; };
+		074C29255090D6C199D8630F /* NorthBridgePresentationPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgePresentationPreferences.swift; sourceTree = "<group>"; };
 		08AB9917A4254CBEC702FA5E /* CompanyRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyRole.swift; sourceTree = "<group>"; };
+		09C136EA68277DF80FB46922 /* NorthBridgeLiquidSwipeShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgeLiquidSwipeShape.swift; sourceTree = "<group>"; };
 		0E63BBB16B963A72773CCE71 /* FinanceOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceOverviewView.swift; sourceTree = "<group>"; };
 		1192565625D5B79B66254009 /* Bolagscenter.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Bolagscenter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		181DE8BE4F1068C8B8B27526 /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShellView.swift; sourceTree = "<group>"; };
@@ -167,6 +180,7 @@
 		392FF1A1D2890A5D99133F46 /* AccountLifecycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountLifecycleView.swift; sourceTree = "<group>"; };
 		3D997F7BB9AA7A2178DF28C3 /* RemoteNotificationRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteNotificationRegistration.swift; sourceTree = "<group>"; };
 		407F7ED6062D9473B688AA88 /* ShareCertificatePolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCertificatePolicy.swift; sourceTree = "<group>"; };
+		42DD98F5D791355C36CAC981 /* NorthBridgeMotion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgeMotion.swift; sourceTree = "<group>"; };
 		42E6CB5AFFF4AFB3A9D61F92 /* CompanyRegistryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyRegistryService.swift; sourceTree = "<group>"; };
 		4A4280AFB5C943E3033B7133 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		4B3A8185C3B9FBCFEC141831 /* RemoteNotificationRegistrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteNotificationRegistrationTests.swift; sourceTree = "<group>"; };
@@ -223,7 +237,9 @@
 		CCC586EDCDFF51FE3BD856A9 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
 		CF164D23FEDF8A4577BFC7BD /* BolagsassistentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BolagsassistentView.swift; sourceTree = "<group>"; };
 		D39B4AA67DFAB2FB28CEABD6 /* AccountDataExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountDataExportService.swift; sourceTree = "<group>"; };
+		D4787634FB6C8C971B7718E5 /* NorthBridgeLiquidSwipeTransition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgeLiquidSwipeTransition.swift; sourceTree = "<group>"; };
 		D6BB4CCE6DECA537B5C18FA2 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		DBCDC6D0DEA7496E0A9F58AC /* NorthBridgePresentationPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgePresentationPreferencesTests.swift; sourceTree = "<group>"; };
 		DC234CC3F9104B66D3784B69 /* DocumentMetadataExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentMetadataExtractorTests.swift; sourceTree = "<group>"; };
 		DE5F566F0A9F0E9E14EE11AC /* LocalAssistantEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAssistantEngine.swift; sourceTree = "<group>"; };
 		E014CCFCF72162B4B8AF5B17 /* OwnershipViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnershipViews.swift; sourceTree = "<group>"; };
@@ -236,10 +252,22 @@
 		EC2882447702F12C3EBD1B65 /* BolagscenterTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BolagscenterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EF0017064956C94272296BA1 /* ConnectivityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectivityMonitor.swift; sourceTree = "<group>"; };
 		F1FFA845B007AB524101C1B7 /* DeadlineRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeadlineRules.swift; sourceTree = "<group>"; };
+		F29895A5122FDA44719E7C8D /* NorthBridgeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorthBridgeComponents.swift; sourceTree = "<group>"; };
 		F7AF53804ECE4A3F8A62588A /* NotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCoordinator.swift; sourceTree = "<group>"; };
 		FBCB655C465018D3515973DA /* OfflineMutationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineMutationQueue.swift; sourceTree = "<group>"; };
 		FEF4272A8AE2989D3D442CF1 /* NotificationDatePolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationDatePolicyTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4D8197C51932D17AC2BF6E20 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1B9BD20B0F153D60DC2CA27A /* Pow in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		007EA86657D6AFCF6102FC7F /* BolagscenterTests */ = {
@@ -256,6 +284,7 @@
 				5FB189EAB458E31416FBADAA /* HTTPClientTests.swift */,
 				99E1380B347FBE0C04723C82 /* LocalAssistantEngineTests.swift */,
 				B7F380910996FF0C108048EB /* MembershipPolicyTests.swift */,
+				DBCDC6D0DEA7496E0A9F58AC /* NorthBridgePresentationPreferencesTests.swift */,
 				FEF4272A8AE2989D3D442CF1 /* NotificationDatePolicyTests.swift */,
 				64081F96DB628EC1DF4AB482 /* OfflineMutationQueueTests.swift */,
 				C9B99266CD5DD4F7265DBC02 /* OrganisationNumberTests.swift */,
@@ -347,7 +376,10 @@
 		2D4C0B8DFE2CBD7AACC4FE94 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				C8A76FD5997FB9AC7222F5A1 /* Components */,
+				5411852CED6EE64C78325A24 /* Motion */,
 				1DC1773C51F945C3103AC83D /* BolagscenterTheme.swift */,
+				074C29255090D6C199D8630F /* NorthBridgePresentationPreferences.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -402,6 +434,16 @@
 				4C08AD792C6B5E9866D08D72 /* UITestFixtureSeeder.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		5411852CED6EE64C78325A24 /* Motion */ = {
+			isa = PBXGroup;
+			children = (
+				09C136EA68277DF80FB46922 /* NorthBridgeLiquidSwipeShape.swift */,
+				D4787634FB6C8C971B7718E5 /* NorthBridgeLiquidSwipeTransition.swift */,
+				42DD98F5D791355C36CAC981 /* NorthBridgeMotion.swift */,
+			);
+			path = Motion;
 			sourceTree = "<group>";
 		};
 		5BCAC861C16DEDDA6246317F /* Persistence */ = {
@@ -564,6 +606,14 @@
 			path = Core;
 			sourceTree = "<group>";
 		};
+		C8A76FD5997FB9AC7222F5A1 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F29895A5122FDA44719E7C8D /* NorthBridgeComponents.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
 		CCE404120A6D2DB5A171B0EF /* Authentication */ = {
 			isa = PBXGroup;
 			children = (
@@ -589,6 +639,7 @@
 			children = (
 				B9384DD52F122307B022024D /* CriticalWorkflowUITests.swift */,
 				33884132D749A5E5A56B4EEF /* OnboardingUITests.swift */,
+				022B696F8A0D2A4B5EAA3793 /* VisualRegressionUITests.swift */,
 			);
 			name = BolagscenterUITests;
 			path = Tests/BolagscenterUITests;
@@ -642,6 +693,7 @@
 		F180F4E4D98368344FD1ABCC /* CompanyProfile */ = {
 			isa = PBXGroup;
 			children = (
+				0264FB9DCE6EBB9E6C388A7B /* ActivityHistoryView.swift */,
 				A223FFF36942F844775F41C3 /* CompanyCreationView.swift */,
 				01475F296912ADBD3AC4AFF0 /* CompanyProfileDetailView.swift */,
 				E037A1BEE32A1FCE152D52E3 /* CompanyWorkspaceView.swift */,
@@ -695,6 +747,7 @@
 			buildConfigurationList = 99E6B3C65D98188341995CD3 /* Build configuration list for PBXNativeTarget "Bolagscenter" */;
 			buildPhases = (
 				E17CC8E5400AB65E3870E937 /* Sources */,
+				4D8197C51932D17AC2BF6E20 /* Frameworks */,
 				66982E1C0966AA4502BB0320 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
@@ -704,6 +757,7 @@
 			);
 			name = Bolagscenter;
 			packageProductDependencies = (
+				4F1F3C866E84CEDA4054F5C7 /* Pow */,
 			);
 			productName = Bolagscenter;
 			productReference = 1192565625D5B79B66254009 /* Bolagscenter.app */;
@@ -777,6 +831,9 @@
 			);
 			mainGroup = 87976270E1CBA6366B0DF795;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E6D95CB40F42FFD34B8A6BA2 /* XCRemoteSwiftPackageReference "Pow" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4F447E0C3BDDF633F35361B7 /* Products */;
 			projectDirPath = "";
@@ -815,6 +872,7 @@
 				A37F6D47129D928259DEA07B /* HTTPClientTests.swift in Sources */,
 				668C969EFBF3DA2DDD78819C /* LocalAssistantEngineTests.swift in Sources */,
 				81E5087E097A97676D4DB50F /* MembershipPolicyTests.swift in Sources */,
+				79FE1992670265FB1176839D /* NorthBridgePresentationPreferencesTests.swift in Sources */,
 				D64C44A3157D408EA01B8B27 /* NotificationDatePolicyTests.swift in Sources */,
 				B9AD10DAC4AAC93C8DEBBC8B /* OfflineMutationQueueTests.swift in Sources */,
 				4D2A375651B9FCA91FF50769 /* OrganisationNumberTests.swift in Sources */,
@@ -835,6 +893,7 @@
 				5A6B6CE230E1D71A215BA91A /* AccountDataExportService.swift in Sources */,
 				94D6BD8C06E6B3667CD450FC /* AccountDeletionService.swift in Sources */,
 				620F7AFE8AE83C779EA58A1D /* AccountLifecycleView.swift in Sources */,
+				50913B35A06B7BD21D716D6D /* ActivityHistoryView.swift in Sources */,
 				BC382726459CD92026F90C09 /* AppConfiguration.swift in Sources */,
 				B252F1E8C30C05827D4984AE /* AppEnvironment.swift in Sources */,
 				93D9FD32C12FDA20790490A0 /* AppLockController.swift in Sources */,
@@ -878,6 +937,11 @@
 				D73D535DCA253B210A174591 /* LocalAssistantEngine.swift in Sources */,
 				FB40EEB4B9567C71B7A1283A /* MembershipPolicy.swift in Sources */,
 				91ADB3EF51285114CFE1CB41 /* MoreView.swift in Sources */,
+				7FF8CFBCA2D58F9088E6A7EA /* NorthBridgeComponents.swift in Sources */,
+				9AD20A12A22EC777A5B72326 /* NorthBridgeLiquidSwipeShape.swift in Sources */,
+				961F27A18586E18EB8D5D64C /* NorthBridgeLiquidSwipeTransition.swift in Sources */,
+				F947D0B671A33F87654D4DDE /* NorthBridgeMotion.swift in Sources */,
+				80BF38BC6C5E41ABFA3B4101 /* NorthBridgePresentationPreferences.swift in Sources */,
 				DFC1BE9D974CF69F8AD6C526 /* NotificationCoordinator.swift in Sources */,
 				599D57BF8ADD52FBDA96B8E7 /* NotificationSettingsView.swift in Sources */,
 				D74EB6F63692989E3D9E330B /* OfflineMutationQueue.swift in Sources */,
@@ -907,6 +971,7 @@
 			files = (
 				25ABB4B1BDA41457ABA5CEB6 /* CriticalWorkflowUITests.swift in Sources */,
 				D995E8C47C728AA24CE87E0F /* OnboardingUITests.swift in Sources */,
+				5465CE5527E37EDD22C9662E /* VisualRegressionUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -971,14 +1036,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Bolagscenter/Resources/Bolagscenter.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Bolagscenter/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge;
 				PRODUCT_MODULE_NAME = Bolagscenter;
 				PRODUCT_NAME = NorthBridge;
@@ -994,14 +1059,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Bolagscenter/Resources/Bolagscenter.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Bolagscenter/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge;
 				PRODUCT_MODULE_NAME = Bolagscenter;
 				PRODUCT_NAME = NorthBridge;
@@ -1016,14 +1081,14 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = BolagscenterWidget/BolagscenterWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				INFOPLIST_FILE = BolagscenterWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge.widget;
 				PRODUCT_MODULE_NAME = BolagscenterWidget;
 				PRODUCT_NAME = NorthBridgeWidget;
@@ -1039,14 +1104,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Bolagscenter/Resources/Bolagscenter.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Bolagscenter/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge;
 				PRODUCT_MODULE_NAME = Bolagscenter;
 				PRODUCT_NAME = NorthBridge;
@@ -1282,14 +1347,14 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = BolagscenterWidget/BolagscenterWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				INFOPLIST_FILE = BolagscenterWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge.widget;
 				PRODUCT_MODULE_NAME = BolagscenterWidget;
 				PRODUCT_NAME = NorthBridgeWidget;
@@ -1338,14 +1403,14 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = BolagscenterWidget/BolagscenterWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				INFOPLIST_FILE = BolagscenterWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 0.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kbhelios.northbridge.widget;
 				PRODUCT_MODULE_NAME = BolagscenterWidget;
 				PRODUCT_NAME = NorthBridgeWidget;
@@ -1409,6 +1474,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E6D95CB40F42FFD34B8A6BA2 /* XCRemoteSwiftPackageReference "Pow" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/EmergeTools/Pow";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4F1F3C866E84CEDA4054F5C7 /* Pow */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E6D95CB40F42FFD34B8A6BA2 /* XCRemoteSwiftPackageReference "Pow" */;
+			productName = Pow;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 39D32623B1A0F8ADE4DDF27D /* Project object */;
 }

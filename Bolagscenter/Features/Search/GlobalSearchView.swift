@@ -6,6 +6,7 @@ import SwiftUI
 struct GlobalSearchView: View {
     @Environment(AppEnvironment.self) private var environment
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query private var memberships: [CompanyMembershipRecord]
     @Query(sort: \CompanyRecord.registeredName) private var companies: [CompanyRecord]
     @Query private var companyProfiles: [CompanyProfileRecord]
@@ -22,55 +23,87 @@ struct GlobalSearchView: View {
     @State private var exportedOverviewURL: URL?
     @State private var exportErrorMessage: String?
     @State private var isExportingOverview = false
+    @State private var selectedScope: GlobalSearchCategory = .all
 
     var body: some View {
-        List {
+        let currentResults = results
+        let currentFilteredResults = filteredResults(from: currentResults)
+
+        NorthBridgeScreen {
+            searchHero
+
             if searchText.trimmed.isEmpty {
                 quickActions
-                Section {
-                    Text("Sökningen omfattar endast bolag och poster som den lokala profilen har aktiv behörighet till.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-            } else if results.isEmpty {
-                ContentUnavailableView.search(text: searchText)
-                    .listRowBackground(Color.clear)
+                Label(
+                    "Sökningen omfattar endast bolag och poster som din lokala profil har aktiv behörighet till.",
+                    systemImage: "lock.shield"
+                )
+                .font(.footnote)
+                .foregroundStyle(Color.northBridgeTextSecondary)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    Color.northBridgeRecessedSurface,
+                    in: RoundedRectangle(cornerRadius: NorthBridgeRadius.control, style: .continuous)
+                )
+            } else if currentResults.isEmpty {
+                NorthBridgeEmptyState(
+                    systemImage: "magnifyingglass",
+                    title: "Inga träffar",
+                    message: "Kontrollera stavningen eller prova ett bredare sökord.",
+                    compact: true
+                )
             } else {
-                Section("Träffar") {
-                    ForEach(results) { result in
-                        Button {
-                            open(result)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: result.systemImage)
-                                    .foregroundStyle(Color.bolagscenterBlue)
-                                    .frame(width: 28)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(result.title)
-                                        .foregroundStyle(.primary)
-                                    Text(result.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                resultFilterBar(currentResults)
+
+                if currentFilteredResults.isEmpty {
+                    NorthBridgeEmptyState(
+                        systemImage: selectedScope.systemImage,
+                        title: "Inga träffar i filtret",
+                        message: "Sökningen gav träffar i andra delar av arbetsytan.",
+                        compact: true,
+                        actionTitle: "Visa alla",
+                        action: { selectedScope = .all }
+                    )
+                } else {
+                    ForEach(resultGroups(from: currentFilteredResults)) { group in
+                        VStack(alignment: .leading, spacing: 10) {
+                            NorthBridgeSectionHeader(group.category.title)
+
+                            VStack(spacing: 0) {
+                                ForEach(group.results) { result in
+                                    Button {
+                                        open(result)
+                                    } label: {
+                                        GlobalSearchResultRow(result: result)
+                                    }
+                                    .buttonStyle(.plain)
+                                    if result.id != group.results.last?.id {
+                                        Divider()
+                                            .padding(.leading, 62)
+                                    }
                                 }
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
                             }
-                            .contentShape(Rectangle())
+                            .background(
+                                Color.northBridgeRaisedSurface,
+                                in: RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+                            )
+                            .overlay {
+                                RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+                                    .stroke(Color.northBridgeHairline, lineWidth: 0.5)
+                            }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityElement(children: .combine)
                     }
                 }
             }
         }
         .navigationTitle("Sök")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always)
         )
+        .accessibilityIdentifier("search.root")
         .onChange(of: environment.selectedCompanyID) { _, _ in
             exportedOverviewURL = nil
         }
@@ -87,61 +120,161 @@ struct GlobalSearchView: View {
         }
     }
 
-    @ViewBuilder
     private var quickActions: some View {
-        Section("Snabbåtgärder") {
-            Button {
-                environment.requestDocumentImport()
-            } label: {
-                Label("Importera dokument", systemImage: "square.and.arrow.down")
-            }
-            Button {
-                environment.navigate(to: .addBoardMeeting, in: .company)
-            } label: {
-                Label("Skapa styrelsemöte", systemImage: "person.3.sequence")
-            }
-            Button {
-                environment.navigate(to: .addDeadline, in: .overview)
-            } label: {
-                Label("Lägg till deadline", systemImage: "calendar.badge.plus")
-            }
-            Button {
-                environment.navigate(to: .boardWorkspace, in: .company)
-            } label: {
-                Label("Registrera beslut", systemImage: "checkmark.seal")
-            }
-            Button {
-                environment.navigate(to: .ownership, in: .company)
-            } label: {
-                Label("Lägg till aktieägare", systemImage: "person.badge.plus")
-            }
-            Button {
-                exportCompanyOverview()
-            } label: {
-                if isExportingOverview {
-                    Label {
-                        Text("Skapar bolagsöversikt")
-                    } icon: {
-                        ProgressView()
-                    }
-                } else {
-                    Label("Exportera bolagsöversikt", systemImage: "square.and.arrow.up")
-                }
-            }
-            .disabled(activeCompany == nil || isExportingOverview)
-            .accessibilityIdentifier("search.exportCompanyOverview")
+        VStack(alignment: .leading, spacing: 12) {
+            NorthBridgeSectionHeader(
+                "Snabbåtgärder",
+                subtitle: "Vanliga flöden, alltid nära"
+            )
 
-            if let exportedOverviewURL {
-                ShareLink(item: exportedOverviewURL) {
-                    Label("Dela bolagsöversikt", systemImage: "doc.richtext")
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 150), spacing: 12)],
+                spacing: 12
+            ) {
+                quickAction("Importera dokument", systemImage: "square.and.arrow.down") {
+                    environment.requestDocumentImport()
                 }
-                .accessibilityIdentifier("search.shareCompanyOverview")
+                quickAction("Skapa styrelsemöte", systemImage: "person.3.sequence") {
+                    environment.navigate(to: .addBoardMeeting, in: .company)
+                }
+                quickAction("Lägg till deadline", systemImage: "calendar.badge.plus") {
+                    environment.navigate(to: .addDeadline, in: .overview)
+                }
+                quickAction("Registrera beslut", systemImage: "checkmark.seal") {
+                    environment.navigate(to: .boardWorkspace, in: .company)
+                }
+                quickAction("Lägg till aktieägare", systemImage: "person.badge.plus") {
+                    environment.navigate(to: .ownership, in: .company)
+                }
+
+                Button {
+                    exportCompanyOverview()
+                } label: {
+                    SearchQuickActionLabel(
+                        title: isExportingOverview ? "Skapar översikt" : "Exportera översikt",
+                        systemImage: "square.and.arrow.up",
+                        isWorking: isExportingOverview
+                    )
+                }
+                .buttonStyle(.plain)
+                .disabled(activeCompany == nil || isExportingOverview)
+                .accessibilityIdentifier("search.exportCompanyOverview")
+
+                if let exportedOverviewURL {
+                    ShareLink(item: exportedOverviewURL) {
+                        SearchQuickActionLabel(
+                            title: "Dela bolagsöversikt",
+                            systemImage: "doc.richtext"
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("search.shareCompanyOverview")
+                }
+
+                quickAction("Fråga assistenten", systemImage: "sparkles") {
+                    environment.navigate(to: .assistant, in: .overview)
+                }
             }
-            Button {
-                environment.navigate(to: .assistant, in: .more)
-            } label: {
-                Label("Fråga Bolagsassistenten", systemImage: "sparkles")
+        }
+    }
+
+    private var searchHero: some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "magnifyingglass")
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 54, height: 54)
+                .background(
+                    .white.opacity(0.14),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Hitta i hela arbetsytan")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                Text(searchContextDescription)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.76))
             }
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .background(
+            LinearGradient(
+                colors: [.northBridgeNavy, .northBridgeBlue.opacity(0.88)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: NorthBridgeRadius.hero, style: .continuous)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    private func resultFilterBar(_ currentResults: [GlobalSearchResult]) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(GlobalSearchCategory.allCases) { category in
+                    NorthBridgeFilterChip(
+                        category.title,
+                        systemImage: category == .all ? nil : category.systemImage,
+                        isSelected: selectedScope == category,
+                        count: category == .all
+                            ? currentResults.count
+                            : currentResults.lazy.filter { $0.category == category }.count
+                    ) {
+                        withAnimation(selectionAnimation) {
+                            selectedScope = category
+                        }
+                    }
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .accessibilityIdentifier("search.filters")
+    }
+
+    private func quickAction(
+        _ title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button {
+            action()
+        } label: {
+            SearchQuickActionLabel(title: title, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var searchContextDescription: String {
+        if let activeCompany {
+            return String(localized: "Bolag, dokument och händelser i \(activeCompany.registeredName)")
+        }
+        return String(localized: "Sök bland bolag och poster du har behörighet till")
+    }
+
+    private func filteredResults(
+        from currentResults: [GlobalSearchResult]
+    ) -> [GlobalSearchResult] {
+        guard selectedScope != .all else { return currentResults }
+        return currentResults.filter { $0.category == selectedScope }
+    }
+
+    private var selectionAnimation: Animation? {
+        reduceMotion || !environment.presentationPreferences.enhancedMotion
+            ? nil
+            : NorthBridgeMotion.selection
+    }
+
+    private func resultGroups(
+        from currentResults: [GlobalSearchResult]
+    ) -> [GlobalSearchResultGroup] {
+        GlobalSearchCategory.allCases.compactMap { category in
+            guard category != .all else { return nil }
+            let categoryResults = currentResults.filter { $0.category == category }
+            guard !categoryResults.isEmpty else { return nil }
+            return GlobalSearchResultGroup(category: category, results: categoryResults)
         }
     }
 
@@ -301,6 +434,7 @@ struct GlobalSearchView: View {
                     title: $0.registeredName,
                     subtitle: "Bolag · \($0.organisationNumber)",
                     systemImage: "building.2",
+                    category: .company,
                     destination: .route(.companyDetails, tab: .company)
                 )
             }
@@ -318,6 +452,7 @@ struct GlobalSearchView: View {
                     title: $0.fullName,
                     subtitle: "Person",
                     systemImage: "person",
+                    category: .governance,
                     destination: .route(.boardAndSignatories, tab: .company)
                 )
             }
@@ -335,6 +470,7 @@ struct GlobalSearchView: View {
                     title: $0.displayName,
                     subtitle: "Aktieägare",
                     systemImage: "chart.pie",
+                    category: .governance,
                     destination: .route(.shareholderRegister, tab: .company)
                 )
             }
@@ -354,6 +490,7 @@ struct GlobalSearchView: View {
                     title: $0.title,
                     subtitle: "Dokument · \($0.category.localizedName)",
                     systemImage: "doc.text",
+                    category: .documents,
                     destination: .route(.document($0.id), tab: .documents)
                 )
             }
@@ -372,6 +509,7 @@ struct GlobalSearchView: View {
                     title: $0.title,
                     subtitle: "Styrelsemöte · \($0.scheduledAt.formatted(date: .abbreviated, time: .omitted))",
                     systemImage: "person.3.sequence",
+                    category: .governance,
                     destination: .route(.boardMeeting($0.id), tab: .company)
                 )
             }
@@ -389,6 +527,7 @@ struct GlobalSearchView: View {
                     title: $0.title,
                     subtitle: "Beslut · \($0.status.localizedName)",
                     systemImage: "checkmark.seal",
+                    category: .governance,
                     destination: .route(.resolution($0.id), tab: .company)
                 )
             }
@@ -407,6 +546,7 @@ struct GlobalSearchView: View {
                     title: $0.title,
                     subtitle: "Deadline · \($0.dueAt.formatted(date: .abbreviated, time: .omitted))",
                     systemImage: "calendar.badge.clock",
+                    category: .company,
                     destination: .route(.deadline($0.id), tab: .overview)
                 )
             }
@@ -424,6 +564,7 @@ struct GlobalSearchView: View {
                     title: $0.kind.localizedName,
                     subtitle: "Finansiellt mått · \($0.sourceName)",
                     systemImage: "chart.xyaxis.line",
+                    category: .finance,
                     destination: .route(.financialMetric($0.id), tab: .finance)
                 )
             }
@@ -441,6 +582,7 @@ struct GlobalSearchView: View {
                     title: $0.summary,
                     subtitle: "Aktivitet · \($0.occurredAt.formatted(date: .abbreviated, time: .shortened))",
                     systemImage: "clock.arrow.circlepath",
+                    category: .activity,
                     destination: .route(.activity, tab: .company)
                 )
             }
@@ -461,6 +603,135 @@ struct GlobalSearchView: View {
     }
 }
 
+private enum GlobalSearchCategory: String, CaseIterable, Identifiable {
+    case all
+    case company
+    case documents
+    case governance
+    case finance
+    case activity
+
+    var id: String { rawValue }
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .all: "Alla"
+        case .company: "Bolag"
+        case .documents: "Dokument"
+        case .governance: "Styrning"
+        case .finance: "Ekonomi"
+        case .activity: "Aktivitet"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .all: "line.3.horizontal.decrease.circle"
+        case .company: "building.2"
+        case .documents: "doc.text"
+        case .governance: "person.3.sequence"
+        case .finance: "chart.xyaxis.line"
+        case .activity: "clock.arrow.circlepath"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .all, .company: .northBridgeInformational
+        case .documents: .cyan
+        case .governance: .indigo
+        case .finance: .northBridgePositive
+        case .activity: .northBridgeWarning
+        }
+    }
+}
+
+private struct GlobalSearchResultGroup: Identifiable {
+    let category: GlobalSearchCategory
+    let results: [GlobalSearchResult]
+
+    var id: GlobalSearchCategory { category }
+}
+
+private struct SearchQuickActionLabel: View {
+    let title: String
+    let systemImage: String
+    var isWorking = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Group {
+                if isWorking {
+                    ProgressView()
+                        .tint(.northBridgeBlue)
+                } else {
+                    Image(systemName: systemImage)
+                        .font(.headline)
+                        .foregroundStyle(Color.northBridgeInformational)
+                }
+            }
+            .frame(width: 38, height: 38)
+            .background(
+                Color.northBridgeInformational.opacity(0.11),
+                in: RoundedRectangle(cornerRadius: 11, style: .continuous)
+            )
+
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.northBridgeTextPrimary)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+                .allowsTightening(true)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+        .padding(12)
+        .background(
+            Color.northBridgeRaisedSurface,
+            in: RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+                .stroke(Color.northBridgeHairline, lineWidth: 0.5)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous))
+    }
+}
+
+private struct GlobalSearchResultRow: View {
+    let result: GlobalSearchResult
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: result.systemImage)
+                .font(.headline)
+                .foregroundStyle(result.category.tint)
+                .frame(width: 40, height: 40)
+                .background(
+                    result.category.tint.opacity(0.11),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(result.title)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(Color.northBridgeTextPrimary)
+                Text(result.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(Color.northBridgeTextSecondary)
+            }
+            Spacer(minLength: 4)
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.northBridgeTextTertiary)
+        }
+        .padding(12)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+}
+
 private struct GlobalSearchResult: Identifiable {
     enum Destination {
         case route(AppRoute, tab: AppTab)
@@ -472,6 +743,7 @@ private struct GlobalSearchResult: Identifiable {
     let title: String
     let subtitle: String
     let systemImage: String
+    let category: GlobalSearchCategory
     let destination: Destination
 }
 

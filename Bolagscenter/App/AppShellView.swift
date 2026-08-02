@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 struct AppShellView: View {
     @Environment(AppEnvironment.self) private var environment
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \CompanyRecord.registeredName) private var companies: [CompanyRecord]
     @Query private var memberships: [CompanyMembershipRecord]
@@ -12,27 +13,65 @@ struct AppShellView: View {
     @Query private var documents: [DocumentRecord]
     @Query private var integrations: [IntegrationRecord]
     @Query private var metrics: [FinancialMetricRecord]
+    @Namespace private var documentTransitionNamespace
 
     var body: some View {
         @Bindable var environment = environment
 
         TabView(selection: $environment.selectedTab) {
-            ForEach(AppTab.allCases) { tab in
-                TabRootView(tab: tab, router: environment.router(for: tab))
-                    .tabItem {
-                        Label(tab.title, systemImage: tab.systemImage)
-                    }
-                    .tag(tab)
+            Tab("Översikt", systemImage: "rectangle.grid.2x2", value: .overview) {
+                tabRoot(.overview)
+            }
+            .accessibilityIdentifier("tab.overview")
+
+            Tab("Ekonomi", systemImage: "chart.xyaxis.line", value: .finance) {
+                tabRoot(.finance)
+            }
+            .accessibilityIdentifier("tab.finance")
+
+            Tab("Bolag", systemImage: "building.2", value: .company) {
+                tabRoot(.company)
+            }
+            .accessibilityIdentifier("tab.company")
+
+            Tab("Dokument", systemImage: "doc.text", value: .documents) {
+                tabRoot(.documents)
+            }
+            .accessibilityIdentifier("tab.documents")
+
+            Tab(value: .search, role: .search) {
+                tabRoot(.search)
+            } label: {
+                Label("Sök", systemImage: "magnifyingglass")
+            }
+            .accessibilityIdentifier("tab.search")
+        }
+        .tabBarMinimizeBehavior(.onScrollDown)
+        .tint(.northBridgeBlue)
+        .sensoryFeedback(
+            .selection,
+            trigger: environment.selectedTab
+        ) { oldValue, newValue in
+            environment.presentationPreferences.hapticsEnabled
+                && oldValue != newValue
+        }
+        .animation(
+            environment.presentationPreferences.enhancedMotion && !reduceMotion
+                ? .snappy(duration: 0.24)
+                : nil,
+            value: environment.selectedTab
+        )
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if environment.connectivityMonitor.state == .offline {
+                offlineBanner
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: 0) {
-                if environment.connectivityMonitor.state == .offline {
-                    offlineBanner
-                }
-                if !accessibleCompanies.isEmpty {
-                    companySwitcher
-                }
+        .sheet(item: $environment.presentedSheet) { presentation in
+            switch presentation {
+            case .settings:
+                SettingsNavigationView(router: environment.settingsRouter)
+                    .presentationCornerRadius(NorthBridgeRadius.sheet)
             }
         }
         .task(id: widgetRevision) {
@@ -45,59 +84,22 @@ struct AppShellView: View {
         }
     }
 
-    private var companySwitcher: some View {
-        HStack {
-            Menu {
-                ForEach(accessibleCompanies) { company in
-                    Button {
-                        environment.selectedCompanyID = company.id
-                    } label: {
-                        if environment.selectedCompanyID == company.id {
-                            Label(company.registeredName, systemImage: "checkmark")
-                        } else {
-                            Text(company.registeredName)
-                        }
-                    }
-                }
-                Divider()
-                Button {
-                    openCompanyCreation()
-                } label: {
-                    Label(
-                        canAddAnotherCompany
-                            ? "Lägg till bolag"
-                            : "Uppgradera för fler bolag",
-                        systemImage: canAddAnotherCompany
-                            ? "plus.circle"
-                            : "creditcard"
-                    )
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "building.2")
-                    Text(selectedCompany?.registeredName ?? String(localized: "Välj bolag"))
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(1)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2)
+    private func tabRoot(_ tab: AppTab) -> some View {
+        TabRootView(
+            tab: tab,
+            router: environment.router(for: tab),
+            companies: companyContexts,
+            selectedCompanyID: environment.selectedCompanyID,
+            canAddCompany: canAddAnotherCompany,
+            documentTransitionNamespace: documentTransitionNamespace,
+            onSelectCompany: { companyID in
+                environment.selectedCompanyID = companyID
+            },
+            onAddCompany: openCompanyCreation,
+            onOpenSettings: {
+                environment.presentSettings()
             }
-            }
-            .font(.subheadline.weight(.semibold))
-            .accessibilityIdentifier("company.switcher")
-            .accessibilityLabel("Aktivt bolag")
-            .accessibilityValue(selectedCompany?.registeredName ?? "")
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .bolagscenterGlassSurface(
-            cornerRadius: 16,
-            tint: Color.bolagscenterBlue.opacity(0.06),
-            interactive: true
         )
-        .padding(.horizontal, 10)
-        .padding(.top, 4)
     }
 
     private var offlineBanner: some View {
@@ -106,11 +108,26 @@ struct AppShellView: View {
             systemImage: "wifi.slash"
         )
         .font(.footnote.weight(.semibold))
-        .foregroundStyle(.primary)
+        .foregroundStyle(Color.northBridgeTextPrimary)
+        .padding(.horizontal, NorthBridgeSpacing.md)
+        .frame(minHeight: NorthBridgeMetrics.minimumTarget)
+        .background(
+            Color.northBridgeRaisedSurface,
+            in: Capsule()
+        )
+        .overlay {
+            Capsule()
+                .stroke(Color.northBridgeWarning.opacity(0.5), lineWidth: 1)
+        }
+        .shadow(
+            color: NorthBridgeElevation.card.color,
+            radius: NorthBridgeElevation.card.radius,
+            x: NorthBridgeElevation.card.x,
+            y: NorthBridgeElevation.card.y
+        )
+        .padding(.horizontal, NorthBridgeSpacing.lg)
+        .padding(.vertical, NorthBridgeSpacing.xs)
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .background(Color.orange.opacity(0.16))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("connectivity.offline")
         .accessibilityHint(
@@ -131,12 +148,14 @@ struct AppShellView: View {
             environment.router(for: environment.selectedTab)
                 .navigate(to: .addCompany)
         } else {
-            environment.navigate(to: .subscription, in: .more)
+            environment.presentSettings(route: .subscription)
         }
     }
 
-    private var selectedCompany: CompanyRecord? {
-        accessibleCompanies.first { $0.id == environment.selectedCompanyID }
+    private var companyContexts: [NorthBridgeCompanyContext] {
+        accessibleCompanies.map {
+            NorthBridgeCompanyContext(id: $0.id, name: $0.registeredName)
+        }
     }
 
     private var accessibleCompanies: [CompanyRecord] {
@@ -182,17 +201,65 @@ struct AppShellView: View {
 private struct TabRootView: View {
     let tab: AppTab
     @Bindable var router: RouterPath
+    let companies: [NorthBridgeCompanyContext]
+    let selectedCompanyID: UUID?
+    let canAddCompany: Bool
+    let documentTransitionNamespace: Namespace.ID
+    let onSelectCompany: (UUID) -> Void
+    let onAddCompany: () -> Void
+    let onOpenSettings: () -> Void
 
-    init(tab: AppTab, router: RouterPath) {
+    init(
+        tab: AppTab,
+        router: RouterPath,
+        companies: [NorthBridgeCompanyContext],
+        selectedCompanyID: UUID?,
+        canAddCompany: Bool,
+        documentTransitionNamespace: Namespace.ID,
+        onSelectCompany: @escaping (UUID) -> Void,
+        onAddCompany: @escaping () -> Void,
+        onOpenSettings: @escaping () -> Void
+    ) {
         self.tab = tab
         _router = Bindable(router)
+        self.companies = companies
+        self.selectedCompanyID = selectedCompanyID
+        self.canAddCompany = canAddCompany
+        self.documentTransitionNamespace = documentTransitionNamespace
+        self.onSelectCompany = onSelectCompany
+        self.onAddCompany = onAddCompany
+        self.onOpenSettings = onOpenSettings
     }
 
     var body: some View {
         NavigationStack(path: $router.path) {
             tabContent
                 .navigationDestination(for: AppRoute.self) { route in
-                    destination(for: route)
+                    AppRouteDestinationView(
+                        route: route,
+                        documentTransitionNamespace: documentTransitionNamespace
+                    )
+                }
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        CompanyContextMenu(
+                            companies: companies,
+                            selectedCompanyID: selectedCompanyID,
+                            canAddCompany: canAddCompany,
+                            prefersCompactLabel: tab == .search,
+                            onSelect: onSelectCompany,
+                            onAddCompany: onAddCompany
+                        )
+                    }
+
+                    ToolbarItem(placement: .topBarTrailing) {
+                        NorthBridgeGlassIconButton(
+                            systemImage: "person.crop.circle",
+                            accessibilityLabel: "Öppna inställningar",
+                            accessibilityIdentifier: "settings.open",
+                            action: onOpenSettings
+                        )
+                    }
                 }
         }
     }
@@ -207,14 +274,54 @@ private struct TabRootView: View {
         case .company:
             CompanyWorkspaceView()
         case .documents:
-            DocumentVaultView()
-        case .more:
-            MoreView()
+            DocumentVaultView(
+                transitionNamespace: documentTransitionNamespace
+            )
+        case .search:
+            GlobalSearchView()
         }
     }
+}
+
+@MainActor
+private struct SettingsNavigationView: View {
+    @Environment(AppEnvironment.self) private var environment
+    @Bindable var router: RouterPath
+
+    init(router: RouterPath) {
+        _router = Bindable(router)
+    }
+
+    var body: some View {
+        NavigationStack(path: $router.path) {
+            SettingsHubView()
+                .navigationDestination(for: AppRoute.self) { route in
+                    AppRouteDestinationView(
+                        route: route,
+                        documentTransitionNamespace: nil
+                    )
+                }
+        }
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Klar") {
+                    environment.dismissSettings()
+                }
+                .fontWeight(.semibold)
+                .accessibilityIdentifier("settings.close")
+            }
+        }
+        .tint(.northBridgeBlue)
+    }
+}
+
+@MainActor
+private struct AppRouteDestinationView: View {
+    let route: AppRoute
+    let documentTransitionNamespace: Namespace.ID?
 
     @ViewBuilder
-    private func destination(for route: AppRoute) -> some View {
+    var body: some View {
         switch route {
         case .deadlines:
             DeadlineCenterView()
@@ -251,7 +358,10 @@ private struct TabRootView: View {
         case .addShareTransaction:
             ShareTransactionEditorView()
         case .document(let id):
-            DocumentViewerView(documentID: id)
+            DocumentViewerView(
+                documentID: id,
+                transitionNamespace: documentTransitionNamespace
+            )
         case .search:
             GlobalSearchView()
         case .integrations:

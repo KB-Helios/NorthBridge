@@ -104,6 +104,19 @@ final class SessionController {
     }
 
     #if DEBUG
+    func installUITestActiveState(accountID: UUID, now: Date = .now) {
+        state = .active(
+            SecureSession(
+                id: UUID(),
+                accountID: accountID,
+                issuedAt: now,
+                expiresAt: now.addingTimeInterval(Self.localSessionDuration),
+                source: .localDevice
+            )
+        )
+        errorMessage = nil
+    }
+
     func installUITestExpiredState() {
         state = .expired
         errorMessage = nil

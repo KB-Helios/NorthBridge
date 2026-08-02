@@ -160,6 +160,8 @@ struct IntegrationCenterView: View {
         }
         .navigationTitle("Integrationer")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .refreshable {
             await refreshCompanyFromRegistry()
         }
@@ -315,6 +317,8 @@ private struct ExternalWorkflowCompletionView: View {
             }
             .navigationTitle("Registrera externt ärende")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }

@@ -106,6 +106,8 @@ struct OwnershipOverviewView: View {
             }
         }
         .navigationTitle("Ägare")
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -278,6 +280,8 @@ private struct ShareholderEditorView: View {
             }
             .navigationTitle("Ny aktieägare")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -364,6 +368,8 @@ private struct ShareClassEditorView: View {
             }
             .navigationTitle("Nytt aktieslag")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -505,6 +511,8 @@ struct ShareTransactionEditorView: View {
         }
         .navigationTitle("Ny aktiehändelse")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .onAppear {
             if shareClassID == nil {
                 shareClassID = companyShareClasses.first?.id
@@ -684,6 +692,8 @@ struct ShareholderRegisterView: View {
         }
         .navigationTitle("Aktiebok")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .alert("Exporten kunde inte skapas", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }

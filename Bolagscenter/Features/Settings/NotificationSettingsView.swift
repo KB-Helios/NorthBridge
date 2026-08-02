@@ -101,6 +101,8 @@ struct NotificationSettingsView: View {
         }
         .navigationTitle("Notiser")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .task {
             ensurePreferences()
             await refreshAuthorization()

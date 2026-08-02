@@ -2,6 +2,11 @@
 
 Native iOS command center for Swedish limited companies, built with Swift 6, SwiftUI, SwiftData, Observation, App Intents, WidgetKit, and Apple security frameworks.
 
+Version 0.2 introduces a native five-workspace command center, a semantic
+NorthBridge design system, selective Liquid Glass, light/dark presentation
+preferences, responsive phone and iPad layouts, and a four-chapter guided
+onboarding flow with an owned liquid-swipe transition.
+
 The public product and installed app are named **NorthBridge**. The Xcode
 project, target, Swift module, and schema types retain their internal
 `Bolagscenter` names. Release-facing identifiers use
@@ -34,10 +39,17 @@ contracts, `docs/SECURITY.md` for current security coverage,
 
 ## Verified artifacts
 
-The `dist` directory contains the warning-free Release simulator build, an
-unsigned arm64 device archive/IPA, a Release smoke screenshot, checksums, and
-the exact Apple-signing steps. The unsigned IPA cannot be installed on a stock
-iPhone until an Apple Developer team signs it; see `dist/README.md`.
+The current release candidate passed 91 of 91 tests on both iOS 27.0 and iOS
+26.5, plus the primary adaptive workspace flow on an iPad mini running iOS
+27.0. All three result summaries reported zero runtime warnings.
+
+Tags matching `v*` run `.github/workflows/release-ipa.yml`, which creates an
+unsigned arm64 device archive, packages `NorthBridge-<tag>-unsigned.ipa`
+(for example, `NorthBridge-v0.2.0-unsigned.ipa`), publishes a SHA-256 manifest
+and installation note, and creates a GitHub pre-release. The IPA cannot be
+installed on a stock iPhone until an Apple Developer team signs it. The
+checked-in `dist` directory is the historical v0.1.0 validation baseline; see
+`dist/README.md` for its exact provenance.
 
 The verified source and downloadable preview artifacts are published in the
 [KB-Helios/NorthBridge](https://github.com/KB-Helios/NorthBridge) repository.

@@ -1,0 +1,121 @@
+name: Release unsigned IPA
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v-prefixed tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build IPA and publish prerelease
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Validate release tag
+        run: |
+          case "$RELEASE_TAG" in
+            v*) ;;
+            *) echo "Release tag must start with v" >&2; exit 1 ;;
+          esac
+
+      - name: Install pinned XcodeGen
+        run: |
+          brew install xcodegen
+          test "$(xcodegen --version)" = "Version: 2.46.0"
+
+      - name: Generate Xcode project and resolve packages
+        run: |
+          xcodegen generate
+          xcodebuild \
+            -project Bolagscenter.xcodeproj \
+            -scheme Bolagscenter \
+            -resolvePackageDependencies
+
+      - name: Build unsigned device archive
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Bolagscenter.xcodeproj \
+            -scheme Bolagscenter \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/NorthBridge.xcarchive" \
+            -skipPackagePluginValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            AD_HOC_CODE_SIGNING_ALLOWED=NO \
+            archive | tee release-build.log
+
+      - name: Package IPA and checksums
+        run: |
+          APP="$RUNNER_TEMP/NorthBridge.xcarchive/Products/Applications/NorthBridge.app"
+          test -d "$APP"
+          mkdir -p release/Payload
+          ditto "$APP" release/Payload/NorthBridge.app
+          ditto -c -k --sequesterRsrc --keepParent \
+            release/Payload \
+            "release/NorthBridge-${RELEASE_TAG}-unsigned.ipa"
+          rm -rf release/Payload
+          (
+            cd release
+            shasum -a 256 "NorthBridge-${RELEASE_TAG}-unsigned.ipa" > SHA256SUMS.txt
+          )
+          cat > release/INSTALLATION-NOTE.txt <<'NOTE'
+          This IPA is an unsigned CI artifact for review and downstream signing.
+          It cannot be installed on a physical iPhone until it is signed with a
+          valid Apple Developer certificate and provisioning profile.
+          NOTE
+
+      - name: Upload immutable workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: northbridge-${{ env.RELEASE_TAG }}-unsigned-ipa
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            release/*
+            release-build.log
+
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          TITLE="NorthBridge ${VERSION} - Liquid Glass Command Center"
+          NOTES_FILE="docs/RELEASE_NOTES_${VERSION}.md"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release/* --clobber
+          elif [ -f "$NOTES_FILE" ]; then
+            gh release create "$RELEASE_TAG" \
+              release/* \
+              --verify-tag \
+              --prerelease \
+              --latest=false \
+              --notes-file "$NOTES_FILE" \
+              --title "$TITLE"
+          else
+            gh release create "$RELEASE_TAG" \
+              release/* \
+              --verify-tag \
+              --prerelease \
+              --latest=false \
+              --generate-notes \
+              --title "$TITLE"
+          fi

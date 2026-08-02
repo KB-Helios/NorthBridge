@@ -40,8 +40,8 @@ struct RootView: View {
                         environment.sessionController
                             .installUITestExpiredState()
                     } else {
-                        try await environment.sessionController
-                            .createLocalSession(
+                        environment.sessionController
+                            .installUITestActiveState(
                                 accountID: UITestLaunchConfiguration.accountID
                             )
                         environment.selectedCompanyID =
@@ -120,13 +120,18 @@ struct RootView: View {
         case "documents":
             environment.selectedTab = .documents
         case "integrations":
-            environment.navigate(to: .integrations, in: .more)
+            environment.presentSettings(route: .integrations)
         case "account":
-            environment.navigate(to: .accountSettings, in: .more)
+            environment.presentSettings(route: .accountSettings)
         case "deadlines":
-            environment.navigate(to: .deadlines, in: .more)
+            environment.navigate(to: .deadlines, in: .overview)
         case "search":
-            environment.navigate(to: .search, in: .overview)
+            environment.selectedTab = .search
+            environment.router(for: .search).reset()
+        case "settings":
+            environment.presentSettings()
+        case "activity":
+            environment.navigate(to: .activity, in: .company)
         default:
             break
         }

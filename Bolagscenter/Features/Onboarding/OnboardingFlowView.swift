@@ -1,6 +1,7 @@
 import SwiftData
 import SwiftUI
 import UIKit
+import Pow
 
 @MainActor
 struct OnboardingFlowView: View {
@@ -37,8 +38,45 @@ struct OnboardingFlowView: View {
     @State private var inviteResponsibilities = ""
     @State private var isWorking = false
     @State private var errorMessage: String?
+    @State private var transitionEdge: HorizontalEdge = .trailing
+    @State private var usesLiquidSwipe = false
+    @State private var validationFeedbackTrigger = 0
+    @State private var chapterFeedbackTrigger = 0
+    @FocusState private var focusedCompanyField: CompanyField?
 
-    private enum Step: Int, CaseIterable {
+    private enum CompanyField: Hashable {
+        case organisationNumber
+        case registeredName
+    }
+
+    private enum Chapter: Int, CaseIterable, Identifiable {
+        case identity
+        case responsibility
+        case protection
+        case connections
+
+        var id: Int { rawValue }
+
+        var title: String {
+            switch self {
+            case .identity: String(localized: "Identitet")
+            case .responsibility: String(localized: "Roll och ansvar")
+            case .protection: String(localized: "Skydd")
+            case .connections: String(localized: "Anslutningar")
+            }
+        }
+
+        var subtitle: String {
+            switch self {
+            case .identity: String(localized: "Din profil och bolagets grunduppgifter")
+            case .responsibility: String(localized: "Rätt behörighet för rätt arbete")
+            case .protection: String(localized: "Enhetsskydd och viktiga notiser")
+            case .connections: String(localized: "Förbered integrationer och samarbete")
+            }
+        }
+    }
+
+    private enum Step: Int, CaseIterable, Hashable {
         case welcome
         case account
         case company
@@ -53,45 +91,48 @@ struct OnboardingFlowView: View {
         var progress: Double {
             Double(rawValue + 1) / Double(Self.allCases.count)
         }
+
+        var chapter: Chapter {
+            switch self {
+            case .welcome, .account, .company, .verification:
+                .identity
+            case .role, .responsibilities:
+                .responsibility
+            case .security, .notifications:
+                .protection
+            case .integrations, .invitation:
+                .connections
+            }
+        }
+    }
+
+    init() {
+        #if DEBUG
+        if UITestLaunchConfiguration.capturesOnboardingLiquidSwipeFrame {
+            _step = State(initialValue: .role)
+            _displayName = State(initialValue: "Visuell Test")
+            _email = State(initialValue: "visual@example.se")
+            _organisationNumber = State(initialValue: "5560160680")
+            _registeredName = State(initialValue: "Visuellt Testbolag AB")
+            _didConfirmCompanyDetails = State(initialValue: true)
+            _usesLiquidSwipe = State(initialValue: true)
+        }
+        #endif
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ProgressView(value: step.progress)
-                    .tint(.bolagscenterBlue)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 12)
-                    .accessibilityLabel("Steg \(step.rawValue + 1) av \(Step.allCases.count)")
+                onboardingProgress
 
-                Group {
-                    switch step {
-                    case .welcome:
-                        welcome
-                    case .account:
-                        accountForm
-                    case .company:
-                        companyForm
-                    case .verification:
-                        verificationForm
-                    case .role:
-                        roleForm
-                    case .responsibilities:
-                        responsibilitiesForm
-                    case .security:
-                        securityForm
-                    case .notifications:
-                        notificationsForm
-                    case .integrations:
-                        integrationsForm
-                    case .invitation:
-                        invitationForm
-                    }
+                ZStack {
+                    onboardingStepStage
                 }
                 .frame(maxWidth: 620, maxHeight: .infinity)
                 .frame(maxWidth: .infinity)
+                .clipped()
             }
-            .background(Color.appBackground)
+            .background(Color.northBridgeBackground)
             .navigationTitle("NorthBridge")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -105,33 +146,226 @@ struct OnboardingFlowView: View {
                 }
             }
         }
+        .accessibilityIdentifier("onboarding.root")
+        .onChange(of: errorMessage) { previous, current in
+            guard current != nil, current != previous else { return }
+            validationFeedbackTrigger += 1
+        }
+    }
+
+    @ViewBuilder
+    private var onboardingStepStage: some View {
+        #if DEBUG
+        if UITestLaunchConfiguration.capturesOnboardingLiquidSwipeFrame {
+            ZStack {
+                verificationForm
+                    .opacity(0)
+                roleForm
+                    .mask {
+                        NorthBridgeLiquidSwipeShape(
+                            progress: 0.94,
+                            edge: .trailing
+                        )
+                    }
+            }
+            .background(Color.northBridgeNavy.opacity(0.055))
+            .accessibilityIdentifier("onboarding.liquidSwipe.frame")
+        } else {
+            transitioningStepContent
+        }
+        #else
+        transitioningStepContent
+        #endif
+    }
+
+    private var transitioningStepContent: some View {
+        stepContent
+            .id(step)
+            .transition(stepTransition)
+    }
+
+    private var onboardingProgress: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Kapitel \(step.chapter.rawValue + 1) av \(Chapter.allCases.count)")
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(Color.northBridgeInformational)
+                Spacer()
+                Text("Steg \(step.rawValue + 1) av \(Step.allCases.count)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(Color.northBridgeTextSecondary)
+            }
+
+            Text(step.chapter.title)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(Color.northBridgeTextPrimary)
+                .accessibilityIdentifier("onboarding.chapter")
+            Text(step.chapter.subtitle)
+                .font(.subheadline)
+                .foregroundStyle(Color.northBridgeTextSecondary)
+
+            HStack(spacing: 6) {
+                ForEach(Chapter.allCases) { chapter in
+                    Capsule()
+                        .fill(chapter.rawValue <= step.chapter.rawValue
+                            ? Color.northBridgeBlue
+                            : Color.northBridgeHairline)
+                        .frame(height: chapter == step.chapter ? 6 : 4)
+                        .animation(
+                            enhancedMotionEnabled ? NorthBridgeMotion.selection : nil,
+                            value: step.chapter
+                        )
+                }
+            }
+
+            ProgressView(value: step.progress)
+                .tint(.northBridgeBlue)
+        }
+        .padding(.horizontal, NorthBridgeSpacing.xl)
+        .padding(.vertical, NorthBridgeSpacing.md)
+        .background(Color.northBridgeRaisedSurface)
+        .overlay(alignment: .bottom) {
+            Divider()
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(
+            "\(step.chapter.title), kapitel \(step.chapter.rawValue + 1) av \(Chapter.allCases.count), steg \(step.rawValue + 1) av \(Step.allCases.count)"
+        )
+        .accessibilityIdentifier("onboarding.progress")
+        .changeEffect(
+            .shine,
+            value: chapterFeedbackTrigger,
+            isEnabled: enhancedMotionEnabled
+        )
+    }
+
+    @ViewBuilder
+    private var stepContent: some View {
+        switch step {
+        case .welcome:
+            welcome
+        case .account:
+            accountForm
+        case .company:
+            companyForm
+        case .verification:
+            verificationForm
+        case .role:
+            roleForm
+        case .responsibilities:
+            responsibilitiesForm
+        case .security:
+            securityForm
+        case .notifications:
+            notificationsForm
+        case .integrations:
+            integrationsForm
+        case .invitation:
+            invitationForm
+        }
+    }
+
+    private var stepTransition: AnyTransition {
+        if !enhancedMotionEnabled {
+            return .northBridgeReducedMotion(from: transitionEdge)
+        }
+        if usesLiquidSwipe {
+            return .northBridgeLiquidSwipe(from: transitionEdge)
+        }
+        return .asymmetric(
+            insertion: .opacity.combined(with: .move(edge: transitionEdge.northBridgeNavigationEdge)),
+            removal: .opacity
+        )
     }
 
     private var welcome: some View {
-        VStack(spacing: 28) {
-            Spacer()
-            NorthBridgeBrandLockup()
+        ScrollView {
+            VStack(spacing: 24) {
+                NorthBridgeBrandLockup(maxWidth: 300)
 
-            VStack(spacing: 12) {
-                Text("Ditt bolag, samlat och begripligt")
-                    .font(.largeTitle.bold())
-                    .multilineTextAlignment(.center)
-                Text("Skapa en säker arbetsyta. Du ser alltid källa, tidpunkt och synkroniseringsstatus för externa uppgifter.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+                VStack(spacing: 10) {
+                    Label("Svenskt bolagsnav", systemImage: "building.2.crop.circle")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.northBridgeInformational)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.northBridgeInformational.opacity(0.1), in: Capsule())
 
-            Spacer()
-            Button("Kom igång") {
-                advance(to: .account)
+                    Text("Ditt bolag, samlat och begripligt")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(Color.northBridgeTextPrimary)
+                        .multilineTextAlignment(.center)
+                    Text("Skapa en säker arbetsyta med tydliga källor, ansvar och nästa steg.")
+                        .font(.body)
+                        .foregroundStyle(Color.northBridgeTextSecondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                VStack(spacing: 0) {
+                    welcomeFeature(
+                        "Spårbar information",
+                        detail: "Källa och tidpunkt följer externa uppgifter.",
+                        systemImage: "checkmark.seal"
+                    )
+                    Divider().padding(.leading, 58)
+                    welcomeFeature(
+                        "Skyddat på enheten",
+                        detail: "Du väljer säkerhet och notiser innan start.",
+                        systemImage: "lock.shield"
+                    )
+                    Divider().padding(.leading, 58)
+                    welcomeFeature(
+                        "Byggt för ansvar",
+                        detail: "Roll och behörighet formar arbetsytan.",
+                        systemImage: "person.badge.key"
+                    )
+                }
+                .background(
+                    Color.northBridgeRaisedSurface,
+                    in: RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+                        .stroke(Color.northBridgeHairline, lineWidth: 0.5)
+                }
+
+                Button("Kom igång") {
+                    advance(to: .account)
+                }
+                .buttonStyle(.glassProminent)
+                .controlSize(.large)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("onboarding.start")
             }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
+            .frame(maxWidth: 520)
+            .padding(28)
             .frame(maxWidth: .infinity)
-            .accessibilityIdentifier("onboarding.start")
         }
-        .padding(28)
+    }
+
+    private func welcomeFeature(
+        _ title: LocalizedStringKey,
+        detail: LocalizedStringKey,
+        systemImage: String
+    ) -> some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.headline)
+                .foregroundStyle(Color.northBridgeInformational)
+                .frame(width: 40, height: 40)
+                .background(Color.northBridgeInformational.opacity(0.1), in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Color.northBridgeTextPrimary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(Color.northBridgeTextSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
     }
 
     private var accountForm: some View {
@@ -169,9 +403,19 @@ struct OnboardingFlowView: View {
                 TextField("Organisationsnummer", text: $organisationNumber)
                     .keyboardType(.numberPad)
                     .textContentType(.none)
+                    .focused(
+                        $focusedCompanyField,
+                        equals: .organisationNumber
+                    )
                     .accessibilityIdentifier("onboarding.organisationNumber")
                 TextField("Registrerat namn", text: $registeredName)
                     .textContentType(.organizationName)
+                    .focused(
+                        $focusedCompanyField,
+                        equals: .registeredName
+                    )
+                    .submitLabel(.done)
+                    .onSubmit { focusedCompanyField = nil }
                     .accessibilityIdentifier("onboarding.companyName")
             } header: {
                 Text("Lägg till bolag")
@@ -188,11 +432,13 @@ struct OnboardingFlowView: View {
                 enabled: companyIsValid,
                 identifier: "onboarding.company.continue"
             ) {
+                focusedCompanyField = nil
                 didConfirmCompanyDetails = false
                 advance(to: .verification)
             }
         }
         .scrollContentBackground(.hidden)
+        .scrollDismissesKeyboard(.interactively)
     }
 
     private var verificationForm: some View {
@@ -309,7 +555,12 @@ struct OnboardingFlowView: View {
             if didVerifyDeviceLock {
                 Section {
                     Label("Enhetsskydd verifierat", systemImage: "checkmark.shield.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.northBridgePositive)
+                        .changeEffect(
+                            .shine,
+                            value: didVerifyDeviceLock,
+                            isEnabled: enhancedMotionEnabled
+                        )
                 }
             }
             onboardingErrorSection
@@ -478,7 +729,7 @@ struct OnboardingFlowView: View {
                 .disabled(isWorking)
                 .accessibilityIdentifier("onboarding.complete")
             } footer: {
-                Text("Du kan ändra alla val i Mer efter att arbetsytan har skapats.")
+                Text("Du kan ändra alla val i Inställningar efter att arbetsytan har skapats.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -512,7 +763,14 @@ struct OnboardingFlowView: View {
                     ? "exclamationmark.triangle.fill"
                     : "exclamationmark.circle.fill"
             )
-            .foregroundStyle(warning ? Color.orange : Color.red)
+            .foregroundStyle(
+                warning ? Color.northBridgeWarning : Color.northBridgeCritical
+            )
+            .changeEffect(
+                .shake,
+                value: validationFeedbackTrigger,
+                isEnabled: enhancedMotionEnabled && !warning
+            )
         }
     }
 
@@ -652,14 +910,46 @@ struct OnboardingFlowView: View {
 
     private func advance(to nextStep: Step) {
         errorMessage = nil
-        withAnimation(reduceMotion ? nil : .snappy) {
-            step = nextStep
+        let isForward = nextStep.rawValue > step.rawValue
+        let crossesChapterBoundary = nextStep.chapter != step.chapter
+        transitionEdge = isForward ? .trailing : .leading
+        usesLiquidSwipe = crossesChapterBoundary
+
+        let animation: Animation
+        if !enhancedMotionEnabled {
+            animation = NorthBridgeMotion.reduced
+        } else if crossesChapterBoundary {
+            animation = NorthBridgeMotion.liquidSwipe
+        } else {
+            animation = NorthBridgeMotion.selection
         }
+
+        withAnimation(animation) {
+            step = nextStep
+            if crossesChapterBoundary, isForward {
+                chapterFeedbackTrigger += 1
+            }
+        }
+        announce(nextStep)
     }
 
     private func moveBack() {
         guard let previous = Step(rawValue: step.rawValue - 1) else { return }
         advance(to: previous)
+    }
+
+    private var enhancedMotionEnabled: Bool {
+        !reduceMotion && environment.presentationPreferences.enhancedMotion
+    }
+
+    private func announce(_ step: Step) {
+        guard UIAccessibility.isVoiceOverRunning else { return }
+        UIAccessibility.post(
+            notification: .announcement,
+            argument: String(
+                localized: "\(step.chapter.title). Steg \(step.rawValue + 1) av \(Step.allCases.count)."
+            )
+        )
     }
 
     private func continueFromSecurity() async {
@@ -764,16 +1054,27 @@ struct OnboardingFlowView: View {
             role: role
         )
 
-        modelContext.insert(account)
-        modelContext.insert(company)
-        modelContext.insert(membership)
-        insertOnboardingRecords(account: account, company: company)
-
         do {
-            try modelContext.save()
+            #if DEBUG
+            if UITestLaunchConfiguration.usesInMemoryStore {
+                environment.sessionController.installUITestActiveState(
+                    accountID: account.id
+                )
+            } else {
+                try await environment.sessionController.createLocalSession(
+                    accountID: account.id
+                )
+            }
+            #else
             try await environment.sessionController.createLocalSession(
                 accountID: account.id
             )
+            #endif
+            modelContext.insert(account)
+            modelContext.insert(company)
+            modelContext.insert(membership)
+            insertOnboardingRecords(account: account, company: company)
+            try modelContext.save()
             environment.selectedCompanyID = company.id
             if enableDeviceLock {
                 environment.lockController.enableAfterVerifiedSetup()
@@ -782,6 +1083,9 @@ struct OnboardingFlowView: View {
             }
         } catch {
             modelContext.rollback()
+            if environment.sessionController.activeSession?.accountID == account.id {
+                await environment.sessionController.logout()
+            }
             SecureLogger.security.error(
                 "Onboarding failed: \(error.localizedDescription, privacy: .private(mask: .hash))"
             )

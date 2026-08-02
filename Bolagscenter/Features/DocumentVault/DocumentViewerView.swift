@@ -9,12 +9,14 @@ struct DocumentViewerView: View {
     @Query(sort: \DocumentVersionRecord.versionNumber, order: .reverse) private var versions: [DocumentVersionRecord]
 
     let documentID: UUID
+    private let transitionNamespace: Namespace.ID?
     @State private var resolvedURL: URL?
     @State private var selectedVersionID: UUID?
     @State private var errorMessage: String?
 
-    init(documentID: UUID) {
+    init(documentID: UUID, transitionNamespace: Namespace.ID? = nil) {
         self.documentID = documentID
+        self.transitionNamespace = transitionNamespace
         _documents = Query(filter: #Predicate { $0.id == documentID })
     }
 
@@ -22,9 +24,15 @@ struct DocumentViewerView: View {
         Group {
             if let document = documents.first {
                 List {
+                    documentHeader(document)
+                        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
                     Section {
                         documentPreview(document: document)
                             .listRowInsets(EdgeInsets())
+                            .clipShape(RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous))
                     }
 
                     Section("Dokumentuppgifter") {
@@ -124,6 +132,9 @@ struct DocumentViewerView: View {
                         }
                     }
                 }
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
+                .background(Color.northBridgeBackground)
                 .navigationTitle(document.title)
                 .navigationBarTitleDisplayMode(.inline)
                 .task(id: versionRevision(for: document)) {
@@ -141,6 +152,11 @@ struct DocumentViewerView: View {
                 )
             }
         }
+        .documentMatchedNavigationTransition(
+            id: documentID,
+            namespace: transitionNamespace
+        )
+        .accessibilityIdentifier("documents.viewer.root")
         .alert("Dokumentet kunde inte öppnas", isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
@@ -154,6 +170,44 @@ struct DocumentViewerView: View {
                 DocumentExportToolbarItem(url: resolvedURL)
             }
         }
+    }
+
+    private func documentHeader(_ document: DocumentRecord) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: document.category.systemImage)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(document.category.tint)
+                .frame(width: 52, height: 58)
+                .background(
+                    document.category.tint.opacity(0.13),
+                    in: RoundedRectangle(cornerRadius: 15, style: .continuous)
+                )
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(document.title)
+                    .font(.title3.weight(.semibold))
+                Text(document.category.localizedName)
+                    .font(.subheadline)
+                    .foregroundStyle(document.category.tint)
+                Label(
+                    document.isAvailableOffline ? "Tillgänglig offline" : "Kräver anslutning",
+                    systemImage: document.isAvailableOffline ? "checkmark.circle" : "icloud.slash"
+                )
+                .font(.caption)
+                .foregroundStyle(
+                    document.isAvailableOffline
+                        ? Color.northBridgeTextSecondary
+                        : Color.northBridgeWarning
+                )
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .background(
+            Color.northBridgeRaisedSurface,
+            in: RoundedRectangle(cornerRadius: NorthBridgeRadius.card, style: .continuous)
+        )
+        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder
@@ -213,6 +267,20 @@ struct DocumentViewerView: View {
             .sorted()
             .joined(separator: "|")
         return "\(document.id.uuidString)#\(revision)"
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func documentMatchedNavigationTransition(
+        id: UUID,
+        namespace: Namespace.ID?
+    ) -> some View {
+        if let namespace {
+            navigationTransition(.zoom(sourceID: id, in: namespace))
+        } else {
+            self
+        }
     }
 }
 
