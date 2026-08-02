@@ -73,6 +73,8 @@ struct ShareCertificatesView: View {
         }
         .navigationTitle("Aktiebrev")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Nytt aktiebrev", systemImage: "plus") {
@@ -440,6 +442,8 @@ private struct ShareCertificateEditorView: View {
         }
         .navigationTitle("Nytt aktiebrev")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Avbryt") {

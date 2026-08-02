@@ -60,6 +60,8 @@ struct BoardWorkspaceView: View {
             }
         }
         .navigationTitle("Styrelsearbete")
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Nytt möte", systemImage: "plus") {
@@ -175,6 +177,8 @@ struct BoardAndSignatoriesView: View {
         }
         .navigationTitle("Styrelse")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Lägg till", systemImage: "person.badge.plus") {
@@ -255,6 +259,8 @@ private struct BoardMemberEditorView: View {
             }
             .navigationTitle("Ny styrelsepost")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -369,6 +375,8 @@ struct BoardMeetingEditorView: View {
         }
         .navigationTitle("Nytt styrelsemöte")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
     }
 
     private var isValid: Bool {
@@ -562,6 +570,8 @@ struct BoardMeetingDetailView: View {
                 }
                 .navigationTitle(meeting.title)
                 .navigationBarTitleDisplayMode(.inline)
+                .scrollContentBackground(.hidden)
+                .background(Color.northBridgeBackground)
             } else {
                 EmptyStateView(
                     systemImage: "person.3.sequence",
@@ -809,6 +819,8 @@ private struct AgendaItemEditorView: View {
             }
             .navigationTitle("Ny dagordningspunkt")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -921,6 +933,8 @@ private struct ResolutionEditorView: View {
             }
             .navigationTitle("Registrera beslut")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -1013,6 +1027,8 @@ private struct MeetingAttendeeEditorView: View {
             }
             .navigationTitle("Lägg till deltagare")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }
@@ -1122,6 +1138,8 @@ struct ResolutionDetailView: View {
                 }
                 .navigationTitle(resolution.title)
                 .navigationBarTitleDisplayMode(.inline)
+                .scrollContentBackground(.hidden)
+                .background(Color.northBridgeBackground)
                 .sheet(item: $actionEditor) { _ in
                     ActionItemEditorView(
                         meetingID: resolution.meetingID,
@@ -1231,6 +1249,8 @@ struct ActionTrackerView: View {
             }
         }
         .navigationTitle("Åtgärder")
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -1328,6 +1348,8 @@ private struct ActionItemEditorView: View {
             }
             .navigationTitle("Ny åtgärd")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") { dismiss() }

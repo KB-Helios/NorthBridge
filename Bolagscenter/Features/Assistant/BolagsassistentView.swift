@@ -34,7 +34,7 @@ struct BolagsassistentView: View {
 
             composer
         }
-        .background(Color.appBackground)
+        .background(Color.northBridgeBackground)
         .navigationTitle("Bolagsassistenten")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog(
@@ -84,8 +84,8 @@ struct BolagsassistentView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .bolagscenterGlassSurface(
-            cornerRadius: 16,
-            tint: Color.bolagscenterBlue.opacity(0.06)
+            cornerRadius: NorthBridgeRadius.control,
+            tint: Color.northBridgeGlassTint
         )
         .padding(.horizontal, 10)
         .padding(.top, 6)

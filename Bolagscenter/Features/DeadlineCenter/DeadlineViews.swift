@@ -35,8 +35,21 @@ struct DeadlineRow: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)
         }
-        .padding(14)
-        .background(Color.appSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(NorthBridgeSpacing.md)
+        .background(
+            Color.northBridgeRaisedSurface,
+            in: RoundedRectangle(
+                cornerRadius: NorthBridgeRadius.control,
+                style: .continuous
+            )
+        )
+        .overlay {
+            RoundedRectangle(
+                cornerRadius: NorthBridgeRadius.control,
+                style: .continuous
+            )
+            .stroke(Color.northBridgeHairline, lineWidth: 0.5)
+        }
         .accessibilityElement(children: .combine)
     }
 }
@@ -85,6 +98,7 @@ struct DeadlineCenterView: View {
             }
         }
         .navigationTitle("Deadlines")
+        .background(Color.northBridgeBackground)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Picker("Filter", selection: $filter) {
@@ -232,6 +246,8 @@ private struct DeadlineRuleGeneratorView: View {
             }
             .navigationTitle("Deadlineregler")
             .navigationBarTitleDisplayMode(.inline)
+            .scrollContentBackground(.hidden)
+            .background(Color.northBridgeBackground)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Avbryt") {
@@ -591,6 +607,8 @@ struct DeadlineDetailView: View {
                 }
                 .navigationTitle(deadline.title)
                 .navigationBarTitleDisplayMode(.inline)
+                .scrollContentBackground(.hidden)
+                .background(Color.northBridgeBackground)
             } else {
                 EmptyStateView(
                     systemImage: "calendar.badge.exclamationmark",
@@ -642,11 +660,11 @@ struct DeadlineDetailView: View {
 
     private var reminderFooter: String {
         guard let preference = deadlineNotificationPreference else {
-            return String(localized: "Aktivera deadline-notiser under Mer > Notiser för att schemalägga påminnelsen.")
+            return String(localized: "Aktivera deadline-notiser under Inställningar > Notiser för att schemalägga påminnelsen.")
         }
         return preference.isEnabled
             ? String(localized: "Den här inställningen ersätter standardförvarningen för just denna deadline.")
-            : String(localized: "Deadline-notiser är avstängda under Mer > Notiser. Inställningen sparas men schemaläggs inte.")
+            : String(localized: "Deadline-notiser är avstängda under Inställningar > Notiser. Inställningen sparas men schemaläggs inte.")
     }
 
     private func canManage(_ companyID: UUID) -> Bool {
@@ -903,6 +921,8 @@ struct DeadlineEditorView: View {
         }
         .navigationTitle("Ny deadline")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
     }
 
     private var isValid: Bool {

@@ -6,6 +6,39 @@ final class CriticalWorkflowUITests: XCTestCase {
         continueAfterFailure = false
     }
 
+    func testFiveRootTabsAndSettingsHubAreReachable() {
+        let app = launchSeeded()
+        let destinations = [
+            ("tab.overview", "Översikt"),
+            ("tab.finance", "Ekonomi"),
+            ("tab.company", "Bolag"),
+            ("tab.documents", "Dokument"),
+            ("tab.search", "Sök"),
+        ]
+
+        for (identifier, title) in destinations {
+            let tab = app.descendants(matching: .any)[identifier]
+            XCTAssertTrue(
+                tab.waitForExistence(timeout: 5),
+                "Tabben \(identifier) saknas"
+            )
+            tab.tap()
+            XCTAssertTrue(
+                app.navigationBars[title].waitForExistence(timeout: 3),
+                "Rotvyn \(title) öppnades inte"
+            )
+        }
+
+        app.descendants(matching: .any)["tab.overview"].tap()
+        let settingsButton = app.buttons["settings.open"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        settingsButton.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["settings.hub"]
+                .waitForExistence(timeout: 5)
+        )
+    }
+
     func testAddsAndSelectsACompany() {
         let app = launchSeeded()
         let switcher = app.buttons["company.switcher"]

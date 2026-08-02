@@ -5,16 +5,20 @@ import Observation
 @Observable
 final class AppEnvironment {
     var selectedTab: AppTab = .overview
+    var presentedSheet: AppPresentation?
     var selectedCompanyID: UUID? {
         didSet {
             UserDefaults.standard.set(selectedCompanyID?.uuidString, forKey: "selection.companyID")
             if oldValue != selectedCompanyID {
                 routers.values.forEach { $0.reset() }
+                settingsRouter.reset()
             }
         }
     }
     var pendingDocumentAction: DocumentVaultAction?
 
+    let presentationPreferences: NorthBridgePresentationPreferences
+    let settingsRouter: RouterPath
     let lockController: AppLockController
     let permissionPolicy: PermissionPolicy
     let keychain: KeychainStore
@@ -31,6 +35,8 @@ final class AppEnvironment {
     private var routers: [AppTab: RouterPath] = [:]
 
     init() {
+        presentationPreferences = NorthBridgePresentationPreferences()
+        settingsRouter = RouterPath()
         let keychain = KeychainStore()
         self.keychain = keychain
         lockController = AppLockController()
@@ -103,7 +109,7 @@ final class AppEnvironment {
         guard let destination = IntentHandoffStore.consume() else { return }
         switch destination {
         case .deadlines:
-            navigate(to: .deadlines, in: .more)
+            navigate(to: .deadlines, in: .overview)
         case .createDeadline:
             navigate(to: .addDeadline, in: .overview)
         case .openCompany:
@@ -116,7 +122,7 @@ final class AppEnvironment {
         case .addAction:
             navigate(to: .actionTracker, in: .company)
         case .assistant:
-            navigate(to: .assistant, in: .more)
+            navigate(to: .assistant, in: .overview)
         }
     }
 
@@ -129,8 +135,7 @@ final class AppEnvironment {
         }
         switch url.host {
         case "deadlines":
-            selectedTab = .more
-            router(for: .more).navigate(to: .deadlines)
+            navigate(to: .deadlines, in: .overview)
         case "create-deadline":
             selectedTab = .overview
             router(for: .overview).navigate(to: .addDeadline)
@@ -139,7 +144,7 @@ final class AppEnvironment {
                let id = UUID(uuidString: idString) {
                 navigate(to: .deadline(id), in: .overview)
             } else {
-                navigate(to: .deadlines, in: .more)
+                navigate(to: .deadlines, in: .overview)
             }
         case "action":
             navigate(to: .actionTracker, in: .company)
@@ -154,9 +159,9 @@ final class AppEnvironment {
                 navigate(to: .resolution(id), in: .company)
             }
         case "integrations":
-            navigate(to: .integrations, in: .more)
+            presentSettings(route: .integrations)
         case "assistant":
-            navigate(to: .assistant, in: .more)
+            navigate(to: .assistant, in: .overview)
         case "company":
             selectedTab = .company
             router(for: .company).reset()
@@ -169,10 +174,28 @@ final class AppEnvironment {
     }
 
     func navigate(to route: AppRoute, in tab: AppTab) {
+        if route == .search {
+            selectedTab = .search
+            router(for: .search).reset()
+            return
+        }
         selectedTab = tab
         let destinationRouter = router(for: tab)
         destinationRouter.reset()
         destinationRouter.navigate(to: route)
+    }
+
+    func presentSettings(route: AppRoute? = nil) {
+        settingsRouter.reset()
+        if let route {
+            settingsRouter.navigate(to: route)
+        }
+        presentedSheet = .settings
+    }
+
+    func dismissSettings() {
+        presentedSheet = nil
+        settingsRouter.reset()
     }
 
     func requestDocumentImport() {

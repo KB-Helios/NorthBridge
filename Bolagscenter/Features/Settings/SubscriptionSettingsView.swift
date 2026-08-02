@@ -84,6 +84,8 @@ struct SubscriptionSettingsView: View {
         }
         .navigationTitle("Prenumeration")
         .navigationBarTitleDisplayMode(.inline)
+        .scrollContentBackground(.hidden)
+        .background(Color.northBridgeBackground)
         .refreshable {
             await manager.loadProducts()
             await manager.refreshEntitlements()

@@ -51,6 +51,9 @@ struct BolagscenterApp: App {
                     .environment(environment)
                     .modelContainer(container)
                     .tint(.bolagscenterBlue)
+                    .preferredColorScheme(
+                        environment.presentationPreferences.appearance.colorScheme
+                    )
             case .failed:
                 PersistenceUnavailableView()
                     .tint(.bolagscenterBlue)

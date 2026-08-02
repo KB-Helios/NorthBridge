@@ -7,7 +7,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
     case finance
     case company
     case documents
-    case more
+    case search
 
     var id: String { rawValue }
 
@@ -17,7 +17,7 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .finance: "Ekonomi"
         case .company: "Bolag"
         case .documents: "Dokument"
-        case .more: "Mer"
+        case .search: "Sök"
         }
     }
 
@@ -27,9 +27,20 @@ enum AppTab: String, CaseIterable, Identifiable, Hashable {
         case .finance: "chart.xyaxis.line"
         case .company: "building.2"
         case .documents: "doc.text"
-        case .more: "ellipsis.circle"
+        case .search: "magnifyingglass"
         }
     }
+
+    var accessibilityIdentifier: String {
+        "tab.\(rawValue)"
+    }
+
+}
+
+enum AppPresentation: String, Identifiable, Sendable {
+    case settings
+
+    var id: String { rawValue }
 }
 
 enum AppRoute: Hashable {
